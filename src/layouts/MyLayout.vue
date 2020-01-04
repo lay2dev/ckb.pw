@@ -22,6 +22,7 @@
 </template>
 
 <script>
+import { getEthAddress } from '../services/eth'
 export default {
   name: 'MyLayout',
 
@@ -30,8 +31,17 @@ export default {
       isHome: true
     }
   },
+  async mounted() {
+    const address = await getEthAddress()
+    if (address) {
+      this.$store.commit('account/SET_PLATFORM', 'eth')
+      this.$store.commit('account/SET_ADDRESS', address)
+    }
+    this.isHome = this.$route.path === '/'
+  },
   watch: {
     '$route.path': function(newVal) {
+      console.log('route: ', newVal)
       this.isHome = newVal === '/'
     }
   }

@@ -88,9 +88,7 @@ export default {
       })
     }
   },
-  mounted() {
-    // this.$store.commit('account/SET_PLATFORM', 'ckb')
-  }
+  async mounted() {}
 }
 </script>
 

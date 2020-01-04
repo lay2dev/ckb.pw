@@ -55,7 +55,12 @@
       <q-separator />
       <q-card-actions align="around">
         <q-btn class="col" :label="$t('btn_clear')" @click="txs = [{}]" />
-        <q-btn class="col" color="primary" :label="$t('btn_send')" />
+        <q-btn
+          class="col"
+          color="primary"
+          :label="$t('btn_send')"
+          @click="send"
+        />
       </q-card-actions>
     </q-card>
   </q-page>
@@ -65,6 +70,7 @@
 import TXInput from '../components/TXInput'
 import { mapGetters } from 'vuex'
 import { sumAmount, subAmount } from '../services/utils'
+import { signWitness } from '../services/eth'
 export default {
   name: 'Send',
   components: { 'tx-input': TXInput },
@@ -83,6 +89,7 @@ export default {
   },
   computed: {
     ...mapGetters('account', {
+      address: 'addressGetter',
       balance: 'balanceGetter',
       MIN_AMOUNT: 'minAmountGetter'
     }),
@@ -91,7 +98,6 @@ export default {
       return this.txs.map(tx => tx.amount).reduce(sumAmount)
     },
     remaining() {
-      console.log(this.sendAmount)
       return subAmount(this.balance, this.sendAmount)
     },
     fee() {
@@ -105,9 +111,15 @@ export default {
       this.confirmDelete = true
     },
     deleteTX() {
-      console.log('delete tx: ', this.deletion.index)
       this.txs.splice(this.deletion.index, 1)
       this.deletion.reset && this.deletion.reset()
+    },
+    async send() {
+      const witness = await signWitness(
+        '0x879a053d4800c6354e76c7985a865d2922c82fb5b3f4577b2fe08b998954f2e0',
+        this.address
+      )
+      console.log('signed witness: ', witness)
     }
   }
 }
