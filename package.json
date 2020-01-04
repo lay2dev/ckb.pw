@@ -8,14 +8,18 @@
   "author": "zhixian <zhixian@yamen.co>",
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .js,.vue src",
+    "lint": "eslint --fix --ext .js,.vue src",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
+    "@nervosnetwork/ckb-sdk-core": "^0.26.3",
     "@quasar/extras": "^1.0.0",
     "axios": "^0.18.1",
+    "jsbi": "^3.1.1",
     "quasar": "^1.0.0",
-    "vue-i18n": "^8.0.0"
+    "vue-i18n": "^8.0.0",
+    "vue-qr": "^2.2.1",
+    "web3": "^1.2.4"
   },
   "devDependencies": {
     "@quasar/app": "^1.0.0",

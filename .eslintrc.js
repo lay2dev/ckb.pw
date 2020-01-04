@@ -34,8 +34,15 @@ module.exports = {
   // add your custom rules here
   rules: {
     'prefer-promise-reject-errors': 'off',
-
     // allow debugger during development only
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off'
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+    'prettier/prettier': [
+      'warn',
+      {
+        'singleQuote': true,
+        'semi': false
+      }
+    ]
   }
 }
