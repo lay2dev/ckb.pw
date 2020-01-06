@@ -10,7 +10,13 @@
       <q-tab-panel class="bg-grey" name="account">
         <q-card class="q-mb-xs">
           <q-card-section :class="`${platform}-card-bg`" class="text-white">
-            <div class="balance-text">{{ capacity.total }} CKB</div>
+            <div class="balance-text">
+              {{
+                loadingBalance
+                  ? $t('label_loading')
+                  : displayBalance(balance) + ' CKB'
+              }}
+            </div>
             <div class="text-caption">{{ address }}</div>
           </q-card-section>
           <q-card-actions align="around">
@@ -23,10 +29,19 @@
         <q-dialog v-model="receiveDialog">
           <q-card>
             <q-card-section class="no-scroll column items-center">
-              <vue-qr :text="address" :size="200" />
+              <vue-qr :text="chosenAddress" :size="200" />
               <div class="text-center address-in-dialog">
-                <p>{{ address }}</p>
+                <p>{{ chosenAddress }}</p>
               </div>
+              <q-btn-toggle
+                v-model="showFullAddress"
+                toggle-color="dark"
+                :options="[
+                  { label: 'ETH Address', value: false },
+                  { label: 'CKB Full Address', value: true }
+                ]"
+              >
+              </q-btn-toggle>
             </q-card-section>
             <q-card-actions>
               <q-btn
@@ -44,7 +59,7 @@
       </q-tab-panel>
     </q-tab-panels>
     <q-tabs
-      class="fixed-bottom bg-blue"
+      class="fixed-bottom bg-dark text-white"
       v-model="tab"
       align="justify"
       narrow-indicator
@@ -56,9 +71,12 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 import VueQr from 'vue-qr'
 import { copyToClipboard } from 'quasar'
+import { getBalance, getFullAddress } from '../services/chain'
+import { sleep, toCKB } from '../services/utils'
+
 export default {
   name: 'PageIndex',
   components: {
@@ -67,28 +85,51 @@ export default {
   data() {
     return {
       tab: 'account',
-      receiveDialog: false
+      receiveDialog: false,
+      showFullAddress: false,
+      loadingBalance: false
     }
   },
   computed: {
-    ...mapState('account', {
-      address: 'address',
-      capacity: 'capacity',
-      platform: 'platform'
-    })
+    ...mapGetters('account', {
+      balance: 'balanceGetter',
+      address: 'addressGetter',
+      platform: 'platformGetter'
+    }),
+    chosenAddress() {
+      return this.showFullAddress ? getFullAddress(this.address) : this.address
+    }
   },
   methods: {
     async copyAddress() {
-      await copyToClipboard(this.address)
+      await copyToClipboard(this.chosenAddress)
       this.$q.notify({
         message: this.$t('msg_copy_success'),
         position: 'center',
         icon: 'check',
         timeout: 1000
       })
+    },
+    displayBalance: balance => toCKB(balance),
+    async loadBalance() {
+      this.loadingBalance = true
+      const { capacity, cellsCount } = await getBalance(this.address)
+      this.$store.commit('account/SET_CAPACITY', capacity)
+      this.$store.commit('cell/SET_TOTAL_CELL', cellsCount)
+      this.loadingBalance = false
     }
   },
-  async mounted() {}
+  async mounted() {
+    while (this.address === '-') {
+      await sleep(100)
+    }
+    await this.loadBalance()
+  },
+  watch: {
+    async address() {
+      await this.loadBalance()
+    }
+  }
 }
 </script>
 

@@ -94,8 +94,8 @@ module.exports = function(ctx) {
       workboxPluginMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
       workboxOptions: {}, // only for GenerateSW
       manifest: {
-        name: 'CKB Portable Wallet',
-        short_name: 'CKB Portable Wallet',
+        name: 'CKB P Wallet',
+        short_name: 'ckb.pw',
         description: 'A web based high security wallet for ckb blockchain',
         display: 'standalone',
         orientation: 'portrait',

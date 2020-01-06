@@ -1,10 +1,10 @@
 export default function() {
   return {
     platform: '',
-    address: '',
+    address: '-',
     alias: '',
     capacity: {
-      total: '12345678',
+      total: '-',
       occupied: '1234'
     },
     txs: []

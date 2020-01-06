@@ -2,7 +2,8 @@
 // so you can safely delete all default props below
 
 export default {
-  title: 'CKB Portable Wallet',
+  title: 'CKB P Wallet',
+  sub_title: 'a revolutionary wallet for ckb',
   tab_account: 'Account',
   tab_explore: 'Explore',
 
@@ -21,7 +22,11 @@ export default {
   label_amount: 'Amount',
   label_remaining: 'Remaining',
   label_fee: 'Fee',
+  label_min_amount: 'Min amount',
+  label_loading: 'Loading..',
 
+  msg_field_required: 'Field is required',
+  msg_full_address_unsupported: 'Full Address Current Unsupported',
   msg_confirm_delete: 'Proceed deleting ?',
   msg_copy_success: 'Copied to Clipboard!'
 }

@@ -2,7 +2,11 @@
   <q-page padding>
     <q-list bordered separator>
       <q-slide-item v-if="txs.length === 1">
-        <tx-input :address.sync="txs[0].address" :amount.sync="txs[0].amount" />
+        <tx-input
+          :address.sync="txs[0].address"
+          :amount.sync="txs[0].amount"
+          :rules="rules"
+        />
       </q-slide-item>
       <q-slide-item
         v-else
@@ -13,10 +17,20 @@
         <template v-slot:right>
           <q-icon name="delete" />
         </template>
-        <tx-input :address.sync="tx.address" :amount.sync="tx.amount" />
+        <tx-input
+          :address.sync="tx.address"
+          :amount.sync="tx.amount"
+          :rules="rules"
+        />
       </q-slide-item>
     </q-list>
-    <q-btn class="full-width q-ma-xs" icon="add" @click="txs.push({})" />
+    <q-btn
+      outline
+      class="full-width q-ma-xs"
+      text-color="blue-grey-4"
+      icon="add"
+      @click="addTX"
+    />
     <q-dialog v-model="confirmDelete" persistent>
       <q-card>
         <q-card-section class="row items-center">
@@ -45,22 +59,35 @@
       <q-card-section class="row">
         <div class="col column">
           <span>{{ $t('label_remaining') + ':' }}</span>
-          <strong>{{ remaining }} CKB</strong>
+          <strong>{{ displayCKB(remaining) }} CKB</strong>
         </div>
         <div class="col column">
           <span>{{ $t('label_fee') + ':' }}</span>
-          <strong>{{ fee }} CKB</strong>
+          <strong>{{ displayCKB(fee) }} CKB</strong>
         </div>
       </q-card-section>
       <q-separator />
       <q-card-actions align="around">
-        <q-btn class="col" :label="$t('btn_clear')" @click="txs = [{}]" />
         <q-btn
+          unelevated
+          color="blue-grey-4"
+          class="col"
+          :label="$t('btn_clear')"
+          @click="txs = [{}]"
+        />
+        <q-btn
+          unelevated
           class="col"
           color="primary"
           :label="$t('btn_send')"
+          :loading="sending"
+          :disable="sending"
           @click="send"
-        />
+        >
+          <template v-slot:loading>
+            <q-spinner-facebook color="white" />
+          </template>
+        </q-btn>
       </q-card-actions>
     </q-card>
   </q-page>
@@ -69,8 +96,9 @@
 <script>
 import TXInput from '../components/TXInput'
 import { mapGetters } from 'vuex'
-import { sumAmount, subAmount } from '../services/utils'
-import { signWitness } from '../services/eth'
+import { sumAmount, subAmount, toCKB, fromCKB } from '../services/utils'
+import { transferETH2CKB, FEE } from '../services/chain'
+import BN from 'bn.js'
 export default {
   name: 'Send',
   components: { 'tx-input': TXInput },
@@ -78,14 +106,29 @@ export default {
     return {
       txs: [],
       confirmDelete: false,
+      sending: false,
       deletion: {
         index: 0,
         reset: null
+      },
+      rules: {
+        address: [
+          val => !!val || this.$t('msg_field_required'),
+          val =>
+            !(val.startsWith('ck') && val.length > 46) ||
+            this.$t('msg_full_address_unsupported')
+        ],
+        amount: [
+          val => !!val || this.$t('msg_field_required'),
+          val =>
+            new BN(val).gte(new BN(this.MIN_AMOUNT)) ||
+            this.$t('label_min_amount') + ' is ' + this.MIN_AMOUNT + ' CKB'
+        ]
       }
     }
   },
   mounted() {
-    this.txs.push({})
+    this.addTX()
   },
   computed: {
     ...mapGetters('account', {
@@ -95,13 +138,17 @@ export default {
     }),
     sendAmount() {
       if (!this.txs.length) return 0
-      return this.txs.map(tx => tx.amount).reduce(sumAmount)
+      let amount = this.txs.map(tx => tx.amount).reduce(sumAmount)
+      !amount && (amount = 0)
+      return amount
     },
     remaining() {
-      return subAmount(this.balance, this.sendAmount)
+      // console.log('balance', this.balance)
+      // console.log('sendAmount', this.sendAmount)
+      return subAmount(this.balance, fromCKB(this.sendAmount))
     },
     fee() {
-      return 0
+      return FEE
     }
   },
   methods: {
@@ -110,16 +157,21 @@ export default {
       this.deletion.reset = reset
       this.confirmDelete = true
     },
+    addTX() {
+      this.txs.push({})
+    },
     deleteTX() {
       this.txs.splice(this.deletion.index, 1)
       this.deletion.reset && this.deletion.reset()
     },
+    displayCKB(val) {
+      return toCKB(val)
+    },
     async send() {
-      const witness = await signWitness(
-        '0x879a053d4800c6354e76c7985a865d2922c82fb5b3f4577b2fe08b998954f2e0',
-        this.address
-      )
-      console.log('signed witness: ', witness)
+      let { address, amount } = this.txs[0]
+      this.sending = true
+      await transferETH2CKB(this.address, address, amount)
+      this.sending = false
     }
   }
 }

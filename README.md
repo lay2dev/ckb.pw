@@ -1,4 +1,4 @@
-# CKB Portable Wallet (ckb.pw)
+# CKB P Wallet (ckb.pw)
 
 A web based high security wallet for ckb blockchain
 

@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 
 import account from './account'
+import cell from './cell'
 import dao from './dao'
 
 Vue.use(Vuex)
@@ -19,6 +20,7 @@ export default function(/* { ssrContext } */) {
   const Store = new Vuex.Store({
     modules: {
       account,
+      cell,
       dao
     },
 

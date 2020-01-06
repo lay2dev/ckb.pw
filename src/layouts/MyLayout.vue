@@ -1,9 +1,11 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <q-header elevated class="bg-dark">
       <q-toolbar>
         <q-toolbar-title>
-          <center>{{ $t('title') }}</center>
+          <center>
+            <div>{{ $t('title') }}</div>
+          </center>
         </q-toolbar-title>
       </q-toolbar>
       <q-btn
@@ -22,7 +24,7 @@
 </template>
 
 <script>
-import { getEthAddress } from '../services/eth'
+import { getEthAddress, loadDeps } from '../services/chain'
 export default {
   name: 'MyLayout',
 
@@ -32,16 +34,17 @@ export default {
     }
   },
   async mounted() {
-    const address = await getEthAddress()
+    const address = await getEthAddress(this)
     if (address) {
       this.$store.commit('account/SET_PLATFORM', 'eth')
       this.$store.commit('account/SET_ADDRESS', address)
     }
     this.isHome = this.$route.path === '/'
+    await loadDeps()
   },
   watch: {
     '$route.path': function(newVal) {
-      console.log('route: ', newVal)
+      // console.log('route: ', newVal)
       this.isHome = newVal === '/'
     }
   }
