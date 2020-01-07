@@ -8,6 +8,7 @@
       no-error-icon
       v-model="_address"
       :label="$t('label_address')"
+      :hint="$t('hint_address')"
       :rules="rules.address"
     >
       <template v-slot:append>
@@ -24,7 +25,7 @@
       v-model="_amount"
       :label="$t('label_amount')"
       suffix="CKB"
-      :placeholder="`${$t('label_min_amount')}: ${MIN_AMOUNT} CKB`"
+      :hint="`${$t('hint_amount')} ${MIN_AMOUNT} CKB`"
       :rules="rules.amount"
     />
   </div>

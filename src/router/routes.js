@@ -3,8 +3,27 @@ const routes = [
     path: '/',
     component: () => import('layouts/MyLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/Index.vue') },
-      { path: 'send', component: () => import('pages/Send.vue') }
+      { path: '', redirect: 'account' },
+      {
+        path: 'account',
+        name: 'account',
+        component: () => import('pages/Index.vue')
+      },
+      {
+        path: 'send',
+        name: 'send',
+        component: () => import('pages/Send.vue')
+      },
+      {
+        path: 'explore',
+        component: () => import('pages/Explore.vue'),
+        name: 'explore'
+      },
+      {
+        path: 'dao',
+        name: 'dao',
+        component: () => import('pages/Dao.vue')
+      }
     ]
   }
 ]

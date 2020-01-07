@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated class="bg-dark">
+    <q-header reveal elevated class="bg-dark">
       <q-toolbar>
         <q-toolbar-title>
           <center>
@@ -20,6 +20,12 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <q-footer elevated class="bg-dark">
+      <q-tabs align="justify" narrow-indicator>
+        <q-route-tab to="/" exact :label="$t('tab_account')" />
+        <q-route-tab to="/explore" exact :label="$t('tab_explore')" />
+      </q-tabs>
+    </q-footer>
   </q-layout>
 </template>
 
@@ -30,7 +36,8 @@ export default {
 
   data() {
     return {
-      isHome: true
+      isHome: true,
+      tab: 'account'
     }
   },
   async mounted() {
@@ -39,13 +46,14 @@ export default {
       this.$store.commit('account/SET_PLATFORM', 'eth')
       this.$store.commit('account/SET_ADDRESS', address)
     }
-    this.isHome = this.$route.path === '/'
+    this.isHome =
+      this.$route.path === '/account' || this.$route.path === '/explore'
     await loadDeps()
   },
   watch: {
     '$route.path': function(newVal) {
       // console.log('route: ', newVal)
-      this.isHome = newVal === '/'
+      this.isHome = newVal === '/account' || newVal === '/explore'
     }
   }
 }

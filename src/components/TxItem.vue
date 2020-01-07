@@ -3,8 +3,10 @@
 </template>
 
 <script>
+import { QItem } from 'quasar'
 export default {
-  name: 'TXItem',
+  name: 'TxItem',
+  extends: QItem,
   data() {
     return {}
   }

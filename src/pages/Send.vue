@@ -26,6 +26,7 @@
     </q-list>
     <q-btn
       outline
+      :ripple="false"
       class="full-width q-ma-xs"
       text-color="blue-grey-4"
       icon="add"
@@ -58,12 +59,27 @@
     <q-card>
       <q-card-section class="row">
         <div class="col column">
-          <span>{{ $t('label_remaining') + ':' }}</span>
-          <strong>{{ displayCKB(remaining) }} CKB</strong>
+          <span class="text-blue-grey-4">{{
+            $t('label_remaining') + ':'
+          }}</span>
+          <div v-if="loadingBalance">{{ $t('label_loading') }}</div>
+          <div v-else class="row items-baseline">
+            <strong>{{ displayCKB(remaining)[0] }}</strong>
+            <span v-if="displayCKB(remaining)[1]" class="text-dig">{{
+              '.' + displayCKB(remaining)[1]
+            }}</span>
+            <span class="q-ml-xs">CKB</span>
+          </div>
         </div>
         <div class="col column">
-          <span>{{ $t('label_fee') + ':' }}</span>
-          <strong>{{ displayCKB(fee) }} CKB</strong>
+          <span class="text-blue-grey-4">{{ $t('label_fee') + ':' }}</span>
+          <div class="row items-baseline">
+            <strong>{{ displayCKB(fee)[0] }}</strong>
+            <span v-if="displayCKB(fee)[1]" class="text-dig">{{
+              '.' + displayCKB(fee)[1]
+            }}</span>
+            <span class="q-ml-xs">CKB</span>
+          </div>
         </div>
       </q-card-section>
       <q-separator />
@@ -127,13 +143,15 @@ export default {
       }
     }
   },
-  mounted() {
+  async mounted() {
     this.addTX()
+    this.$store.dispatch('account/LOAD_BALANCE')
   },
   computed: {
     ...mapGetters('account', {
       address: 'addressGetter',
       balance: 'balanceGetter',
+      loadingBalance: 'loadingBalanceGetter',
       MIN_AMOUNT: 'minAmountGetter'
     }),
     sendAmount() {
@@ -143,8 +161,6 @@ export default {
       return amount
     },
     remaining() {
-      // console.log('balance', this.balance)
-      // console.log('sendAmount', this.sendAmount)
       return subAmount(this.balance, fromCKB(this.sendAmount))
     },
     fee() {
@@ -165,7 +181,7 @@ export default {
       this.deletion.reset && this.deletion.reset()
     },
     displayCKB(val) {
-      return toCKB(val)
+      return toCKB(val).split('.')
     },
     async send() {
       let { address, amount } = this.txs[0]
@@ -173,6 +189,17 @@ export default {
       await transferETH2CKB(this.address, address, amount)
       this.sending = false
     }
+  },
+  watch: {
+    async address() {
+      this.$store.dispatch('account/LOAD_BALANCE')
+    }
   }
 }
 </script>
+<style lang="scss" scoped>
+.text-dig {
+  font-size: 0.8em;
+  font-weight: 300;
+}
+</style>

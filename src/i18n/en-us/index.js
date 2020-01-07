@@ -24,9 +24,23 @@ export default {
   label_fee: 'Fee',
   label_min_amount: 'Min amount',
   label_loading: 'Loading..',
+  label_tx_all: 'All',
+  label_tx_in: 'In',
+  label_tx_out: 'Out',
+  label_from: 'From',
+  label_to: 'To',
+  label_apc: 'APC',
+  label_locked: 'Locked',
+  label_in_dao: 'in DAO',
+  label_revenue: 'Revenue',
 
+  hint_address: 'ETH and CKB addresses are supported',
+  hint_amount: 'Min transfer amount is ',
+  hint_available: 'available',
+
+  msg_dao_min_amount: 'Min amount is 102 CKB',
   msg_field_required: 'Field is required',
-  msg_full_address_unsupported: 'Full Address Current Unsupported',
-  msg_confirm_delete: 'Proceed deleting ?',
+  msg_full_address_unsupported: 'Full addresses are currently unsupported',
+  msg_confirm_delete: 'Proceed Deleting ?',
   msg_copy_success: 'Copied to Clipboard!'
 }

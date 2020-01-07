@@ -12,8 +12,16 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
+$eth-gray  : #3C3C3D;
+$eth-lgray : #ECF0F1;
+$eth-gold  : #C99D66;
+
+$ckb-green : #3CC68A;
+
+$meta-card-bg: linear-gradient(to right top, #1D1D1D, $eth-gray);
+
 // $primary   : #027BE3;
-$primary   : #3CC68A;
+$primary   : darken($ckb-green, 10%);
 // $secondary : #26A69A;
 $secondary : #027BE3;
 $accent    : #9C27B0;
@@ -24,9 +32,3 @@ $positive  : #21BA45;
 $negative  : #C10015;
 $info      : #31CCEC;
 $warning   : #F2C037;
-
-$eth-gray  : #3C3C3D;
-$eth-lgray : #ECF0F1;
-$eth-gold  : #C99D66;
-
-$ckb-green : #3CC68A;

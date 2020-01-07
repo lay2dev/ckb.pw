@@ -1,3 +1,11 @@
+export function LOADING_BALANCE(state) {
+  state.loadingBalance = true
+}
+
+export function BALANCE_LOADED(state) {
+  state.loadingBalance = false
+}
+
 export function SET_PLATFORM(state, payload) {
   state.platform = payload
   return state

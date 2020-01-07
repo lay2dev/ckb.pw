@@ -56,6 +56,7 @@ export const getFullAddress = (
 }
 
 export const getBalance = async address => {
+  if (address === '-') return
   const lockHash = ckb.utils.scriptToHash({
     args: address,
     hashType: 'data',
@@ -143,7 +144,7 @@ const buildETH2CKBTx = async (
   //assemble transaction
   const txParams = {
     fromAddress,
-    toAddress: fromAddress,
+    toAddress: toAddress.indexOf('ck') === 0 ? toAddress : fromAddress,
     capacity: BigInt(capacity * 10 ** 8),
     fee: BigInt(FEE),
     safeMode: true,
@@ -163,7 +164,7 @@ const buildETH2CKBTx = async (
   }
 
   if (toAddress.indexOf('ck') === 0) {
-    rawTransaction.outputs[0].lock.args = toAddress
+    // rawTransaction.outputs[0].lock.args = toAddress
   } else {
     rawTransaction.outputs[0].lock = {
       hashType: 'data',
@@ -214,9 +215,8 @@ const buildETH2CKBTx = async (
  * @param {*} rawTransaction
  */
 const signETHTransaction = async (ethAddress, rawTransaction) => {
-  const transactionHash = ckb.utils.rawTransactionToHash(rawTransaction)
-
   // console.log('rawTransaction', rawTransaction)
+  const transactionHash = ckb.utils.rawTransactionToHash(rawTransaction)
   const emptyWitness = {
     ...rawTransaction.witnesses[0],
     lock: `0x${'0'.repeat(130)}`
@@ -293,7 +293,7 @@ const signETHTransaction = async (ethAddress, rawTransaction) => {
     )
   }
 
-  // console.log('signedTx', tx);
+  // console.log('signedTx', tx)
 
   return tx
 }

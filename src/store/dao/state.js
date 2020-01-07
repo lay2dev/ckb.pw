@@ -1,5 +1,7 @@
 export default function() {
   return {
-    total: ''
+    locked: '-',
+    apc: '-',
+    revenue: '-'
   }
 }
