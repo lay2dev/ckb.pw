@@ -211,9 +211,14 @@ export default {
       return toCKB(val).split('.')
     },
     async send() {
-      let { address, amount } = this.txs[0]
+      // let { address, amount } = this.txs[0]
       this.sending = true
-      await transferETH2CKB(this.address, address, fromCKB(amount))
+      await transferETH2CKB(
+        this.address,
+        this.txs.map(x => {
+          return { address: x.address, amount: fromCKB(x.amount) }
+        })
+      )
       this.sending = false
       this.sent = true
     }

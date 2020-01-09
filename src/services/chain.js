@@ -4,6 +4,7 @@ import web3utils from 'web3-utils'
 import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import api from './api'
+import { sumAmount } from './utils'
 
 // const startBlock = '0x2bf20' // query unspent cell start point
 
@@ -133,14 +134,13 @@ export const getBalance = async address => {
  * @param {*} capacity
  * @param {*} privateKey
  */
-export const transferETH2CKB = async (ethAddress, toAddress, capacity) => {
+export const transferETH2CKB = async (ethAddress, txs) => {
   const fromCKBAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
   const rawTransaction = await buildETH2CKBTx(
     ckb,
     fromCKBAddress,
-    toAddress,
     ethAddress,
-    capacity
+    txs
   )
   const signedTx = await signETHTransaction(ethAddress, rawTransaction)
   // console.log(JSON.stringify(signedTx, null, 2))
@@ -158,13 +158,7 @@ export const transferETH2CKB = async (ethAddress, toAddress, capacity) => {
  * @param {*} ethAddress
  * @param {*} capacity
  */
-const buildETH2CKBTx = async (
-  ckb,
-  fromAddress,
-  toAddress,
-  ethAddress,
-  capacity
-) => {
+const buildETH2CKBTx = async (ckb, fromAddress, ethAddress, txs) => {
   // fetch unspent cell by eth lock hash
   const ethLockScript = {
     hashType: 'data',
@@ -177,21 +171,40 @@ const buildETH2CKBTx = async (
   //   lockHash: ethLockHash
   // })
 
+  //TODO: get total capacity here
+  const totalCapacity = txs.map(x => x.amount).reduce(sumAmount)
+
   console.log('lock hash', ethLockHash)
-  console.log('capacity', capacity)
-  const unspentEthCells = await api.getUnspentCells(ethLockHash, capacity)
+  console.log('totalCapacity', totalCapacity)
+  const unspentEthCells = await api.getUnspentCells(ethLockHash, totalCapacity)
   console.log('unSpentCells', unspentEthCells)
 
   // console.log('unspentEthCells.length = ', unspentEthCells.length)
 
+  const receivePairs = txs.map(x => {
+    let { address: toAddress, amount: capacity } = x
+    if (toAddress.indexOf('ck') !== 0) {
+      toAddress = fromAddress
+    }
+    return { address: toAddress, capacity: BigInt(capacity) }
+  })
+
+  const unspentCellsMap = new Map()
+  let mapKey = ckb.utils.scriptToHash({
+    codeHash: ckb.config.secp256k1Dep.codeHash,
+    hashType: ckb.config.secp256k1Dep.hashType,
+    args: '0x' + ckb.utils.parseAddress(fromAddress, 'hex').slice(6)
+  })
+  unspentCellsMap.set(mapKey, unspentEthCells)
+
   //assemble transaction
   const txParams = {
-    fromAddress,
-    toAddress: toAddress.indexOf('ck') === 0 ? toAddress : fromAddress,
-    capacity: BigInt(capacity),
+    fromAddresses: [fromAddress],
+    receivePairs,
+    // capacity: BigInt(capacity),
     fee: '0x' + BigInt(FEE).toString(16),
     safeMode: true,
-    cells: unspentEthCells,
+    cells: unspentCellsMap,
     deps: ckb.config.secp256k1Dep
   }
   console.log('rawTxParams', txParams)
@@ -206,26 +219,28 @@ const buildETH2CKBTx = async (
     outputType: ''
   }
 
-  if (toAddress.indexOf('ck') === 0) {
-    // rawTransaction.outputs[0].lock.args = toAddress
-  } else {
-    rawTransaction.outputs[0].lock = {
-      hashType: 'data',
-      codeHash: keccak_code_hash,
-      args: toAddress
-    }
-  }
-
-  //modify lock of change outputs to eth lock
-  rawTransaction.outputs.forEach((_, i) => {
-    if (i > 0) {
+  for (let i in rawTransaction.outputs) {
+    if (i < txs.length) {
+      const { address: toAddress } = txs[i]
+      if (toAddress.indexOf('ck') === 0) {
+        // rawTransaction.outputs[0].lock.args = toAddress
+      } else {
+        rawTransaction.outputs[i].lock = {
+          hashType: 'data',
+          codeHash: keccak_code_hash,
+          args: toAddress
+        }
+      }
+    } else {
+      // change output
       rawTransaction.outputs[i].lock = {
         hashType: 'data',
         codeHash: keccak_code_hash,
         args: ethAddress
       }
     }
-  })
+  }
+
   // console.log('rawTransaction outputs', rawTransaction.outputs)
 
   // set cell deps for transaction
