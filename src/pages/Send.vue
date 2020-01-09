@@ -89,7 +89,7 @@
           color="blue-grey-4"
           class="col"
           :label="$t('btn_clear')"
-          @click="txs = [{}]"
+          @click="resetTXs"
         />
         <q-btn
           unelevated
@@ -106,6 +106,29 @@
         </q-btn>
       </q-card-actions>
     </q-card>
+    <q-dialog v-model="sent" persistent>
+      <q-card>
+        <q-card-section class="row items-center">
+          <q-avatar icon="done_all" color="primary" text-color="white" />
+          <span class="q-ml-sm text-h5">{{ $t('msg_sent_success') }}</span>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            :label="$t('label_return')"
+            color="blue-grey-6"
+            to="/"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            :label="$t('label_send_more')"
+            color="primary"
+            v-close-popup
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -123,6 +146,7 @@ export default {
       txs: [],
       confirmDelete: false,
       sending: false,
+      sent: false,
       deletion: {
         index: 0,
         reset: null
@@ -180,14 +204,18 @@ export default {
       this.txs.splice(this.deletion.index, 1)
       this.deletion.reset && this.deletion.reset()
     },
+    resetTXs() {
+      this.txs = [{}]
+    },
     displayCKB(val) {
       return toCKB(val).split('.')
     },
     async send() {
       let { address, amount } = this.txs[0]
       this.sending = true
-      await transferETH2CKB(this.address, address, amount)
+      await transferETH2CKB(this.address, address, fromCKB(amount))
       this.sending = false
+      this.sent = true
     }
   },
   watch: {

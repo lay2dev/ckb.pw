@@ -1,8 +1,20 @@
 <template>
-  <q-page padding>
+  <q-page class="column q-gutter-sm" padding>
     <q-card class="card-dao text-white">
       <q-card-section @click="$router.push({ name: 'dao' })">
         <div class="text-h6">Nervos DAO</div>
+        <div class="text-subtitle2">
+          {{ $t('label_locked') + ': ' + locked + ' CKB' }}
+        </div>
+        <div class="text-subtitle2 row q-gutter-sm">
+          <span>{{ $t('label_apc') + ': ' + apc }}</span>
+          <span>{{ $t('label_revenue') + ': ' + revenue }}</span>
+        </div>
+      </q-card-section>
+    </q-card>
+    <q-card class="card-dao-plus text-white">
+      <q-card-section>
+        <div class="text-h6">Nervos DAO +</div>
         <div class="text-subtitle2">
           {{ $t('label_locked') + ': ' + locked + ' CKB' }}
         </div>
@@ -48,5 +60,8 @@ export default {
     darken($ckb-green, 15%),
     $ckb-green
   );
+}
+.card-dao-plus {
+  background: linear-gradient(to right top, $dark, $eth-gray);
 }
 </style>

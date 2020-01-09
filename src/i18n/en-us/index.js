@@ -29,6 +29,8 @@ export default {
   label_tx_out: 'Out',
   label_from: 'From',
   label_to: 'To',
+  label_return: 'Return home',
+  label_send_more: 'Send more',
   label_apc: 'APC',
   label_locked: 'Locked',
   label_in_dao: 'in DAO',
@@ -39,6 +41,7 @@ export default {
   hint_available: 'available',
 
   msg_dao_min_amount: 'Min amount is 102 CKB',
+  msg_sent_success: 'Transaction Sent',
   msg_field_required: 'Field is required',
   msg_full_address_unsupported: 'Full addresses are currently unsupported',
   msg_confirm_delete: 'Proceed Deleting ?',

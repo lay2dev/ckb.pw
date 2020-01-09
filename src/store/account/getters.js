@@ -15,3 +15,13 @@ export function minAmountGetter() {
 export function loadingBalanceGetter(state) {
   return state.loadingBalance
 }
+
+export function loadingTXsGetter(state) {
+  return state.loadingTXs
+}
+
+export function txsGetter(state) {
+  return state.txs
+}
+
+export const noMoreTXsGetter = state => state.noMoreTXs

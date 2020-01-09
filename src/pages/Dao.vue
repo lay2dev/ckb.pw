@@ -91,7 +91,7 @@ export default {
   methods: {
     async test() {
       await api.getUnspentCells(
-        '0x3c0f15ca6631565dd2b352f10e429deb4d765b1a5bf82dd6899b9315e1af9152',
+        '0x787e97af6860c58fcecd12653714330c003f5b960e09f027295a49e3c41d609f',
         '0xd81215452e'
       )
     },

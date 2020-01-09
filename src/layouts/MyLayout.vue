@@ -30,7 +30,8 @@
 </template>
 
 <script>
-import { getEthAddress, loadDeps } from '../services/chain'
+import { init, getAccount, loadDeps } from '../services/chain'
+import vConsole from 'vconsole'
 export default {
   name: 'MyLayout',
 
@@ -40,21 +41,52 @@ export default {
       tab: 'account'
     }
   },
-  async mounted() {
-    const address = await getEthAddress(this)
-    if (address) {
+  created: function() {
+    if (this.$route.query.ctl == 5) {
+      new vConsole()
+      console.log('vConsole loaded')
+    }
+    window.addEventListener('load', async () => {
+      await init()
+      console.log('inited')
+      let address = await getAccount(this)
+      console.log('loaded address', address)
+
       this.$store.commit('account/SET_PLATFORM', 'eth')
       this.$store.commit('account/SET_ADDRESS', address)
-    }
+      await loadDeps()
+    })
+  },
+  mounted: function() {
     this.isHome =
       this.$route.path === '/account' || this.$route.path === '/explore'
-    await loadDeps()
   },
   watch: {
     '$route.path': function(newVal) {
-      // console.log('route: ', newVal)
       this.isHome = newVal === '/account' || newVal === '/explore'
     }
   }
 }
+
+/* init zone */
+// moments
+import moment from 'moment'
+moment.updateLocale('en', {
+  relativeTime: {
+    future: 'in %s',
+    past: '%s ago',
+    s: 'seconds',
+    ss: '%ds',
+    m: '1m',
+    mm: '%dm',
+    h: '1h',
+    hh: '%dh',
+    d: '1d',
+    dd: '%dd',
+    M: '1m',
+    MM: '%dm',
+    y: 'a year',
+    yy: '%d years'
+  }
+})
 </script>

@@ -7,118 +7,167 @@
       active-color="black"
       class="text-blue-grey-5"
       align="justify"
+      @input="filterTXs"
     >
       <q-tab name="all" icon="import_export" :label="$t('label_tx_all')" />
-      <q-tab name="in" icon="call_received" :label="$t('label_tx_in')" />
+      <q-tab name="in" icon="call_received" :label="' ' + $t('label_tx_in')" />
       <q-tab name="out" icon="call_made" :label="$t('label_tx_out')" />
     </q-tabs>
     <q-separator />
     <q-scroll-area :style="scrollHeight">
-      <q-list separator>
-        <q-item
-          v-for="(tx, index) in filteredTXs"
-          :key="index"
-          clickable
-          @click="checkTX(tx)"
-          v-ripple
+      <q-pull-to-refresh @refresh="done => reload({ type: direction }, done)">
+        <q-infinite-scroll
+          ref="inf"
+          @load="loadMore"
+          :offset="100"
+          debounce="250"
         >
-          <q-item-section avatar>
-            <q-avatar
-              v-if="tx.direction === 'in'"
-              icon="call_received"
-              size="2.2em"
-              color="primary"
-              text-color="white"
-            />
-            <q-avatar
-              v-else
-              icon="call_made"
-              size="2.2em"
-              color="blue-grey-6"
-              text-color="white"
-            />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label lines="1">
-              <span :class="`${tx.direction}-text`" class="text-weight-bold">{{
-                displayAmount(tx.amount)
-              }}</span>
-            </q-item-label>
-            <q-item-label caption lines="1">
-              <span class="text-weight-bold">{{
-                displayDirection(tx.direction)
-              }}</span>
-              <span> - {{ tx.counterparty }}</span>
-            </q-item-label>
-          </q-item-section>
+          <q-list separator>
+            <q-item
+              v-for="(tx, index) in txs"
+              :key="index"
+              clickable
+              @click="checkTX(tx)"
+              v-ripple
+            >
+              <q-item-section avatar>
+                <q-avatar
+                  v-if="tx.direction === 'in'"
+                  icon="call_received"
+                  size="2.2em"
+                  color="primary"
+                  text-color="white"
+                />
+                <q-avatar
+                  v-else
+                  icon="call_made"
+                  size="2.2em"
+                  color="blue-grey-6"
+                  text-color="white"
+                />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label lines="1">
+                  <span :class="`${tx.direction}-text`">
+                    <span class="text-balance-int">{{
+                      displayAmount(tx.amount)[0]
+                    }}</span>
+                    <span
+                      v-if="displayAmount(tx.amount)[1]"
+                      class="text-caption"
+                      >{{ '.' + displayAmount(tx.amount)[1] }}</span
+                    >
+                    <span> CKB</span>
+                  </span>
+                </q-item-label>
+                <q-item-label caption lines="1">
+                  <span class="text-weight-bold">{{
+                    displayDirection(tx.direction)
+                  }}</span>
+                  <span>
+                    -
+                    {{
+                      displayAddress(tx.direction === 'in' ? tx.from : tx.to)
+                    }}</span
+                  >
+                </q-item-label>
+              </q-item-section>
 
-          <q-item-section side top>
-            {{ new Date(tx.timestamp).toLocaleTimeString() }}
-          </q-item-section>
-        </q-item>
-      </q-list>
+              <q-item-section class="text-caption" side top>
+                {{ displayTime(tx.time) }}
+              </q-item-section>
+            </q-item>
+          </q-list>
+          <template v-slot:loading>
+            <div class="row justify-center q-my-md">
+              <q-spinner-dots color="primary" size="30px" />
+            </div>
+          </template>
+        </q-infinite-scroll>
+      </q-pull-to-refresh>
     </q-scroll-area>
   </div>
 </template>
 
 <script>
-import { toCKB } from '../services/utils'
+import { mapGetters } from 'vuex'
+import { toCKB, displayLongAddress } from '../services/utils'
 import { openURL } from 'quasar'
+import moment from 'moment'
 export default {
   name: 'TxList',
-  props: ['height'],
+  props: ['height', 'txs'],
   data() {
     return {
-      direction: 'all',
-      txs: [
-        {
-          hash:
-            '0x9cba3f872959cc9c4478e17872dd4fa89bbe70ab62732d314bf9a57a907c2c72',
-          direction: 'in',
-          amount: '1230000000',
-          counterparty: 'ckb123321213213213',
-          timestamp: 1578294299965
-        },
-        {
-          hash:
-            '0xc79a19c8c8590c07206182b35b7299cbe01f1595f35174b24222de2aa0f7c31f',
-          direction: 'out',
-          amount: '321000000',
-          counterparty: 'ckb454545454544',
-          timestamp: 1578274290965
-        }
-      ]
+      direction: 'all'
     }
-  },
-  mounted() {
-    this.onLoad()
-    this.onLoad()
-    this.onLoad()
   },
   methods: {
     checkTX: function({ hash }) {
       openURL(`https://explorer.nervos.org/aggron/transaction/${hash}`)
     },
-    displayAmount: amount => toCKB(amount) + ' CKB',
+    displayAddress: address => displayLongAddress(address),
+    displayAmount: amount => toCKB(amount).split('.'),
+    displayTime: time => moment(time).fromNow(),
     displayDirection: function(direction) {
       return this.$t(direction === 'in' ? 'label_from' : 'label_to')
     },
-    onLoad: function() {
-      this.txs = [...this.txs, ...this.txs]
+    filterTXs() {
+      switch (this.direction) {
+        case 'all':
+          this.reload({})
+          break
+        default:
+          this.reload({ type: this.direction })
+      }
+    },
+    reload: function(params, done) {
+      this.$refs.inf.resume()
+      this.$store.dispatch('account/LOAD_TXS', params)
+      this.done = done
+    },
+    loadMore: function(index, done) {
+      if (this.txs && this.txs.length) {
+        const lastHash = this.txs[this.txs.length - 1].hash
+        this.reload({ type: this.direction, lastHash }, done)
+      } else {
+        done && done()
+      }
     }
   },
   computed: {
-    filteredTXs: function() {
-      if (this.direction === 'all') return this.txs
-      return this.txs.filter(tx => tx.direction === this.direction)
-    },
     scrollHeight: function() {
       return 'height:' + this.height
+    },
+    ...mapGetters('account', {
+      loadingTXs: 'loadingTXsGetter',
+      noMoreTXs: 'noMoreTXsGetter'
+    })
+  },
+  watch: {
+    loadingTXs(newVal, oldVal) {
+      if (!newVal && oldVal) this.done && this.done()
+    },
+    noMoreTXs(newVal) {
+      newVal ? this.$refs.inf.stop() : this.$refs.inf.resume()
     }
+
+    // txs(newVal, oldVal) {
+    //   this.done && this.done()
+    //   const growth = newVal.length - oldVal.length
+    //   if (!growth) {
+    //     console.log('stop loading')
+    //     this.$refs.inf.stop()
+    //   }
+    // }
   }
 }
 </script>
 <style lang="scss" scoped>
+.text-balance-int {
+  font-size: 1.1em;
+  font-weight: 500;
+}
 .in-text {
   color: $primary;
 }

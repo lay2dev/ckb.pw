@@ -35,7 +35,7 @@
         </q-btn>
       </q-card-actions>
     </q-card>
-    <tx-list :height="listHeight" />
+    <tx-list :height="listHeight" :txs="txs" />
     <q-dialog v-model="receiveDialog">
       <q-card>
         <q-card-section class="no-scroll column items-center">
@@ -97,7 +97,8 @@ export default {
       balance: 'balanceGetter',
       address: 'addressGetter',
       loadingBalance: 'loadingBalanceGetter',
-      platform: 'platformGetter'
+      platform: 'platformGetter',
+      txs: 'txsGetter'
     }),
     chosenAddress() {
       return this.showFullAddress ? getFullAddress(this.address) : this.address
@@ -116,6 +117,9 @@ export default {
     displayBalance: balance => toCKB(balance).split('.'),
     async loadBalance() {
       this.$store.dispatch('account/LOAD_BALANCE')
+    },
+    async loadTXs(params) {
+      this.$store.dispatch('account/LOAD_TXS', params)
     }
   },
   async mounted() {
@@ -124,11 +128,11 @@ export default {
       160 -
       dom.height(document.getElementById('metaCard')) +
       'px'
-    await this.loadBalance()
+    await Promise.all([this.loadBalance(), this.loadTXs({})])
   },
   watch: {
     async address() {
-      await this.loadBalance()
+      await Promise.all([this.loadBalance(), this.loadTXs({})])
     }
   }
 }

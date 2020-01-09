@@ -3,20 +3,54 @@
 import web3utils from 'web3-utils'
 import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
-import { sleep } from './utils'
+import api from './api'
 
-const keccak_tx_hash =
-  '0xee768786e221da161b25bf60c1f1eb5457d61acb1c6457e602d900b02ad61733' // aggron testchain tx_hash
-
-const keccak_code_hash =
-  '0x966e7bf34d4f6dc7ea18c0f86fe9ced504fad7565b47f8c3e168d2e48b1e2970' // eth code hash
-
-const startBlock = '0x2bf20' // query unspent cell start point
+// const startBlock = '0x2bf20' // query unspent cell start point
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
-const chainId = 'aggron'
+const { BigInt } = ckb.utils.JSBI
+export const FEE = 100000000
 
-export const FEE = 1000
+var keccak_code_hash
+// var keccak_tx_hash
+var cellDeps
+
+export const init = async () => {
+  let config = await api.getConfig()
+  keccak_code_hash = config.keccak_code_hash
+  // keccak_tx_hash = config.keccak_tx_hash
+  cellDeps = config.cellDeps
+}
+
+export const getAccount = async context => {
+  const getAccountPromise = new Promise((resolve, reject) => {
+    window.web3.eth.getAccounts((err, result) => {
+      err && reject(err)
+      resolve(result)
+    })
+  })
+  return new Promise(async (resolve, reject) => {
+    let account = '0x'
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        ethereum.autoRefreshOnNetworkChange = false
+        await window.ethereum.enable()
+        const accounts = await getAccountPromise
+        account = accounts[0]
+        ethereum.on('accountsChanged', function(accounts) {
+          context.$store.commit('account/SET_ADDRESS', accounts[0])
+        })
+        resolve(account)
+      } catch (err) {
+        reject(err)
+      }
+    } else if (window.web3) {
+      const accounts = await getAccountPromise
+      account = accounts[0]
+      resolve(account)
+    }
+  })
+}
 
 export const getEthAddress = async context => {
   if (typeof window.ethereum !== 'undefined') {
@@ -31,14 +65,7 @@ export const getEthAddress = async context => {
 }
 
 export const loadDeps = async () => {
-  let dep = JSON.parse(localStorage.getItem(`dep-${chainId}`))
-  if (!dep) {
-    dep = await ckb.loadSecp256k1Dep()
-    localStorage.setItem(`dep-${chainId}`, JSON.stringify(dep))
-  } else {
-    ckb.config.secp256k1Dep = dep
-  }
-  // console.log('Dep Loaded: ', dep)
+  ckb.config.secp256k1Dep = await api.LoadK1()
 }
 
 export const getFullAddress = (
@@ -55,6 +82,16 @@ export const getFullAddress = (
   })
 }
 
+export const getLockHash = address => {
+  if (address === '-') return null
+  return ckb.utils.scriptToHash({
+    args: address,
+    hashType: 'data',
+    codeHash: keccak_code_hash
+  })
+}
+
+/*
 export const getBalance = async address => {
   if (address === '-') return
   const lockHash = ckb.utils.scriptToHash({
@@ -88,6 +125,7 @@ export const getBalance = async address => {
 
   return { blockNumber, capacity, cellsCount }
 }
+*/
 
 /**
  * submit transfer eth to ckb transaction
@@ -134,10 +172,15 @@ const buildETH2CKBTx = async (
     args: ethAddress
   }
   const ethLockHash = ckb.utils.scriptToHash(ethLockScript)
-  const unspentEthCells = await ckb.loadCells({
-    start: startBlock,
-    lockHash: ethLockHash
-  })
+  // const unspentEthCells = await ckb.loadCells({
+  //   start: startBlock,
+  //   lockHash: ethLockHash
+  // })
+
+  console.log('lock hash', ethLockHash)
+  console.log('capacity', capacity)
+  const unspentEthCells = await api.getUnspentCells(ethLockHash, capacity)
+  console.log('unSpentCells', unspentEthCells)
 
   // console.log('unspentEthCells.length = ', unspentEthCells.length)
 
@@ -145,16 +188,16 @@ const buildETH2CKBTx = async (
   const txParams = {
     fromAddress,
     toAddress: toAddress.indexOf('ck') === 0 ? toAddress : fromAddress,
-    capacity: BigInt(capacity * 10 ** 8),
-    fee: BigInt(FEE),
+    capacity: BigInt(capacity),
+    fee: '0x' + BigInt(FEE).toString(16),
     safeMode: true,
     cells: unspentEthCells,
     deps: ckb.config.secp256k1Dep
   }
-  // console.log('rawTxParams', txParams)
+  console.log('rawTxParams', txParams)
   const rawTransaction = ckb.generateRawTransaction(txParams)
 
-  // console.log('rawTX: ', rawTransaction)
+  console.log('rawTX: ', rawTransaction)
 
   rawTransaction.witnesses = rawTransaction.inputs.map(() => '0x')
   rawTransaction.witnesses[0] = {
@@ -188,23 +231,7 @@ const buildETH2CKBTx = async (
   // set cell deps for transaction
   // dep1: eth lock script
   // dep2: secp256k1_data_bin script in genesisBlock
-  const genesisBlock = await ckb.rpc.getBlockByNumber('0x0')
-  rawTransaction.cellDeps = [
-    {
-      outPoint: {
-        txHash: keccak_tx_hash,
-        index: '0x0'
-      },
-      depType: 'code'
-    },
-    {
-      outPoint: {
-        txHash: genesisBlock.transactions[0].hash,
-        index: '0x3'
-      },
-      depType: 'code'
-    }
-  ]
+  rawTransaction.cellDeps = cellDeps
   // console.log(rawTransaction.cellDeps)
   return rawTransaction
 }

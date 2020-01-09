@@ -1,5 +1,16 @@
+import web3Utils from 'web3-utils'
 import BN from 'bn.js'
 import numberToBN from 'number-to-bn'
+
+export const displayLongAddress = (address, maxlen = 20) => {
+  !address && (address = 'NULL')
+  address.length > maxlen &&
+    (address =
+      address.slice(0, 8) +
+      (address.length > 46 ? '......' : '...') +
+      address.slice(-8))
+  return address
+}
 
 export const sumAmount = (a, b) => {
   const A = new BN(safe(a))
@@ -19,6 +30,9 @@ const zero = new BN(0)
 const negative1 = new BN(-1)
 const unit = 'ckb'
 export const toCKB = capacity => {
+  if (web3Utils.isHexStrict(capacity)) {
+    capacity = web3Utils.hexToNumberString(capacity)
+  }
   var cap = numberToBN(capacity)
   var negative = cap.lt(zero)
   const base = getValueOfUnit(unit)
@@ -154,6 +168,7 @@ function getValueOfUnit(unitInput) {
 
 function safe(n) {
   !n && (n = 0)
+  web3Utils.isHexStrict(n) && (n = web3Utils.hexToNumberString(n))
   return n
 }
 
