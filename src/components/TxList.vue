@@ -122,7 +122,6 @@ export default {
       }
     },
     reload: function(params, done) {
-      this.$refs.inf.resume()
       this.$store.dispatch('account/LOAD_TXS', params)
       this.done = done
     },
@@ -145,8 +144,8 @@ export default {
     })
   },
   watch: {
-    loadingTXs(newVal, oldVal) {
-      if (!newVal && oldVal) this.done && this.done()
+    loadingTXs(newVal) {
+      !newVal && this.done && this.done()
     },
     noMoreTXs(newVal) {
       newVal ? this.$refs.inf.stop() : this.$refs.inf.resume()

@@ -27,9 +27,14 @@ export async function LOAD_TXS(
       commit('LOADING_TXS')
       const txs = await api.getTxList(lockHash, lastHash, size, type)
       if (txs.length) {
-        lastHash ? commit('APPEND_TXS', txs) : commit('SET_TXS', txs)
-        commit('TXS_NO_MORE', false)
+        if (lastHash) {
+          commit('APPEND_TXS', txs)
+        } else {
+          commit('SET_TXS', txs)
+          commit('TXS_NO_MORE', false)
+        }
       } else {
+        !lastHash && commit(commit('SET_TXS', txs))
         commit('TXS_NO_MORE', true)
       }
       commit('TXS_LOADED')
