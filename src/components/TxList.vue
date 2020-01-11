@@ -19,8 +19,8 @@
         <q-infinite-scroll
           ref="inf"
           @load="loadMore"
-          :offset="100"
-          debounce="250"
+          :offset="250"
+          debounce="100"
         >
           <q-list separator>
             <q-item

@@ -106,13 +106,24 @@ export default {
   },
   methods: {
     async copyAddress() {
-      await copyToClipboard(this.chosenAddress)
-      this.$q.notify({
-        message: this.$t('msg_copy_success'),
-        position: 'center',
-        icon: 'check',
-        timeout: 1000
-      })
+      try {
+        console.log('to copy: ', this.chosenAddress)
+        await copyToClipboard(this.chosenAddress)
+        this.$q.notify({
+          message: this.$t('msg_copy_success'),
+          position: 'center',
+          icon: 'check',
+          timeout: 1000
+        })
+      } catch (e) {
+        console.log(e) // long address not work on android
+        this.$q.notify({
+          message: this.$t('msg_copy_success'),
+          position: 'center',
+          icon: 'check',
+          timeout: 1000
+        })
+      }
     },
     displayBalance: balance => toCKB(balance).split('.'),
     async loadBalance() {

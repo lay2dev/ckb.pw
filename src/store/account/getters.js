@@ -9,7 +9,7 @@ export function platformGetter(state) {
 }
 
 export function minAmountGetter() {
-  return 62
+  return 61
 }
 
 export function loadingBalanceGetter(state) {

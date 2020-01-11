@@ -35,17 +35,5 @@ export function SET_TXS(state, payload) {
 }
 
 export function APPEND_TXS(state, payload) {
-  state.tx = [...state.tx, ...payload]
-  /*
-  const txs = []
-  const map = new Map()
-  const fullset = [...state.txs, ...payload]
-  for (const tx of fullset) {
-    if (!map.has(tx.hash)) {
-      map.set(tx.hash, true)
-      txs.push(tx)
-    }
-  }
-  state.txs = txs
-  */
+  state.txs = [...state.txs, ...payload]
 }
