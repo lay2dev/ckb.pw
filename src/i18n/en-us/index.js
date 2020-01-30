@@ -22,6 +22,7 @@ export default {
   label_amount: 'Amount',
   label_remaining: 'Remaining',
   label_fee: 'Fee',
+  label_fee_rate: 'Fee Rate',
   label_min_amount: 'Min amount',
   label_loading: 'Loading..',
   label_tx_all: 'All',
@@ -43,7 +44,7 @@ export default {
   msg_dao_min_amount: 'Min amount is 102 CKB',
   msg_sent_success: 'Transaction Sent',
   msg_field_required: 'Field is required',
-  msg_full_address_unsupported: 'Full addresses are currently unsupported',
+  msg_invalid_address: 'Invalid Address',
   msg_confirm_delete: 'Proceed Deleting ?',
   msg_copy_success: 'Copied to Clipboard!'
 }

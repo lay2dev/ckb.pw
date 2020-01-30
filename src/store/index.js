@@ -4,6 +4,7 @@ import Vuex from 'vuex'
 import account from './account'
 import cell from './cell'
 import dao from './dao'
+import chain from './chain'
 
 Vue.use(Vuex)
 
@@ -21,7 +22,8 @@ export default function(/* { ssrContext } */) {
     modules: {
       account,
       cell,
-      dao
+      dao,
+      chain
     },
 
     // enable strict mode (adds overhead!)

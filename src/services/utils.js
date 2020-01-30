@@ -1,4 +1,5 @@
 import web3Utils from 'web3-utils'
+import { parseAddress } from '@nervosnetwork/ckb-sdk-utils'
 import BN from 'bn.js'
 import numberToBN from 'number-to-bn'
 
@@ -121,6 +122,40 @@ export const fromCKB = capacity => {
   }
 
   return new BN(cap.toString(10), 10)
+}
+
+export const verifyAddress = address => {
+  // address must be a string
+  if (typeof address !== 'string') return null
+
+  // check if is eth address
+  const isEthAddress = /^0x[a-fA-F0-9]{40}$/.test(address)
+  if (isEthAddress) return 'eth'
+
+  let maybe = null
+
+  address.startsWith('ckb') && (maybe = 'ckb')
+  address.startsWith('ckt') && (maybe = 'ckt')
+
+  if (!maybe) return null
+
+  try {
+    const hexAddress = parseAddress(address, 'hex')
+    hexAddress.startsWith('0x0100') && (maybe += '_short')
+    hexAddress.startsWith('0x0200') && (maybe += '_full')
+    hexAddress.startsWith('0x0400') && (maybe += '_full')
+  } catch (err) {
+    return null
+  }
+
+  // check address length for each kind
+  if (maybe.endsWith('short')) {
+    if (address.length !== 46) maybe = null
+  } else if (maybe.endsWith('full')) {
+    if (address.length !== 95) maybe = null
+  }
+
+  return maybe
 }
 
 function numberToString(arg) {

@@ -5,21 +5,18 @@ import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import api from './api'
 import { sumAmount } from './utils'
-
-// const startBlock = '0x2bf20' // query unspent cell start point
+import txSize from './txSize'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
 const { BigInt } = ckb.utils.JSBI
-export const FEE = 100000000
+export const MIN_FEE_RATE = 1000
 
 var keccak_code_hash
-// var keccak_tx_hash
 var cellDeps
 
 export const init = async () => {
   let config = await api.getConfig()
   keccak_code_hash = config.keccak_code_hash
-  // keccak_tx_hash = config.keccak_tx_hash
   cellDeps = config.cellDeps
 }
 
@@ -92,94 +89,36 @@ export const getLockHash = address => {
   })
 }
 
-/*
-export const getBalance = async address => {
-  if (address === '-') return
-  const lockHash = ckb.utils.scriptToHash({
-    args: address,
-    hashType: 'data',
-    codeHash: keccak_code_hash
-  })
-
-  let states = await ckb.rpc.getLockHashIndexStates()
-  let state = states.find(s => s.lockHash === lockHash)
-  if (!state) {
-    state = await ckb.rpc.indexLockHash(lockHash, startBlock)
-  }
-  let tipHeight = await ckb.rpc.getTipBlockNumber()
-  while (parseInt(state.blockNumber, 16) < parseInt(tipHeight, 16)) {
-    await sleep(2000)
-    states = await ckb.rpc.getLockHashIndexStates()
-    state = states.find(s => s.lockHash === lockHash)
-    tipHeight = await ckb.rpc.getTipBlockNumber()
-  }
-
-  let {
-    blockNumber,
-    capacity,
-    cellsCount
-  } = await ckb.rpc.getCapacityByLockHash(lockHash)
-
-  blockNumber = web3utils.hexToNumberString(blockNumber)
-  capacity = web3utils.hexToNumberString(capacity)
-  cellsCount = web3utils.hexToNumberString(cellsCount)
-
-  return { blockNumber, capacity, cellsCount }
-}
-*/
-
 /**
  * submit transfer eth to ckb transaction
- * @param {*} toAddress
+ * @param {*} ethAddress
  * @param {*} capacity
- * @param {*} privateKey
  */
-export const transferETH2CKB = async (ethAddress, txs) => {
-  const fromCKBAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
-  const rawTransaction = await buildETH2CKBTx(
-    ckb,
-    fromCKBAddress,
-    ethAddress,
-    txs
-  )
+export const transferETH2CKB = async (ethAddress, txs, fee = '1000') => {
+  const rawTransaction = await buildETH2CKBTx(ethAddress, txs, fee)
   const signedTx = await signETHTransaction(ethAddress, rawTransaction)
-  // console.log(JSON.stringify(signedTx, null, 2))
   await ckb.rpc.sendTransaction(signedTx)
-  // const realTxHash = await ckb.rpc.sendTransaction(signedTx)
-  // console.log(`The real transaction hash is: ${realTxHash}`)
 }
 
 /**
  * build raw Tx for send etch locked cell to ckb locked cell
- * @param {*} ckb
  * @param {*} fromAddress
- * @param {*} publicKeyHash
- * @param {*} toAddress
  * @param {*} ethAddress
- * @param {*} capacity
+ * @param {*} txs
  */
-const buildETH2CKBTx = async (ckb, fromAddress, ethAddress, txs) => {
-  // fetch unspent cell by eth lock hash
+const buildETH2CKBTx = async (ethAddress, txs, fee) => {
+  const fromAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
+  if (!keccak_code_hash) return null
   const ethLockScript = {
     hashType: 'data',
     codeHash: keccak_code_hash,
     args: ethAddress
   }
   const ethLockHash = ckb.utils.scriptToHash(ethLockScript)
-  // const unspentEthCells = await ckb.loadCells({
-  //   start: startBlock,
-  //   lockHash: ethLockHash
-  // })
 
-  //TODO: get total capacity here
   const totalCapacity = txs.map(x => x.amount).reduce(sumAmount)
 
-  console.log('lock hash', ethLockHash)
-  console.log('totalCapacity', totalCapacity)
   const unspentEthCells = await api.getUnspentCells(ethLockHash, totalCapacity)
-  console.log('unSpentCells', unspentEthCells)
-
-  // console.log('unspentEthCells.length = ', unspentEthCells.length)
 
   const receivePairs = txs.map(x => {
     let { address: toAddress, amount: capacity } = x
@@ -202,7 +141,7 @@ const buildETH2CKBTx = async (ckb, fromAddress, ethAddress, txs) => {
     fromAddresses: [fromAddress],
     receivePairs,
     // capacity: BigInt(capacity),
-    fee: '0x' + BigInt(FEE).toString(16),
+    fee: '0x' + BigInt(fee).toString(16),
     safeMode: true,
     cells: unspentCellsMap,
     deps: ckb.config.secp256k1Dep
@@ -389,4 +328,14 @@ export const signWitness = async (message, from) => {
   const witness = await signFunc
 
   return witness
+}
+
+export const getFee = async function(feeRate, address, txs) {
+  console.log('address', address)
+  let rawTx = await buildETH2CKBTx(address, txs)
+  console.log('raw tx: ', rawTx)
+  if (!rawTx) return 0
+  let size = txSize(rawTx)
+  console.log('tx size: ', size)
+  return ckb.utils.JSBI.multiply(BigInt(size) * BigInt(feeRate))
 }

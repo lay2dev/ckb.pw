@@ -10,7 +10,8 @@ export const API = {
   LoadK1: BASE_URL + 'cell/loadSecp256k1Cell',
   GetTxList: BASE_URL + 'cell/txList',
   GetConfig: BASE_URL + 'cell/getConfig',
-  GetBalance: BASE_URL + 'cell/getCapacityByLockHash'
+  GetBalance: BASE_URL + 'cell/getCapacityByLockHash',
+  GetFeeRate: BASE_URL + 'block/feeRate'
 }
 
 export const get = async (url, params) => {
@@ -61,5 +62,13 @@ export default {
   getBalance: async lockHash => {
     const { data } = await get(API.GetBalance, { lockHash })
     return data
+  },
+  getFeeRate: async speed => {
+    const { data } = await get(API.GetFeeRate)
+    if (speed) {
+      return data.feeRate
+    } else {
+      return data.feeRate
+    }
   }
 }

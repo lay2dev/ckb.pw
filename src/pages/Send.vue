@@ -1,61 +1,6 @@
 <template>
   <q-page padding>
-    <q-list bordered separator>
-      <q-slide-item v-if="txs.length === 1">
-        <tx-input
-          :address.sync="txs[0].address"
-          :amount.sync="txs[0].amount"
-          :rules="rules"
-        />
-      </q-slide-item>
-      <q-slide-item
-        v-else
-        v-for="(tx, index) in txs"
-        @right="({ reset }) => registerDelete(index, reset)"
-        :key="index"
-      >
-        <template v-slot:right>
-          <q-icon name="delete" />
-        </template>
-        <tx-input
-          :address.sync="tx.address"
-          :amount.sync="tx.amount"
-          :rules="rules"
-        />
-      </q-slide-item>
-    </q-list>
-    <q-btn
-      outline
-      :ripple="false"
-      class="full-width q-ma-xs"
-      text-color="blue-grey-4"
-      icon="add"
-      @click="addTX"
-    />
-    <q-dialog v-model="confirmDelete" persistent>
-      <q-card>
-        <q-card-section class="row items-center">
-          <q-avatar icon="warning" color="error" text-color="warning" />
-          <h6 class="q-ml-sm">{{ $t('msg_confirm_delete') }}</h6>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn
-            flat
-            :label="$t('btn_cancel')"
-            color="error"
-            @click="deletion.reset && deletion.reset()"
-            v-close-popup
-          />
-          <q-btn
-            flat
-            :label="$t('btn_confirm')"
-            color="primary"
-            @click="deleteTX()"
-            v-close-popup
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <outputs-form ref="outputs_form" :outputs="txs" />
     <q-card>
       <q-card-section class="row">
         <div class="col column">
@@ -133,43 +78,24 @@
 </template>
 
 <script>
-import TXInput from '../components/TXInput'
+import OutputsForm from '../components/OutputsForm'
 import { mapGetters } from 'vuex'
 import { sumAmount, subAmount, toCKB, fromCKB } from '../services/utils'
-import { transferETH2CKB, FEE } from '../services/chain'
-import BN from 'bn.js'
+import { transferETH2CKB } from '../services/chain'
 export default {
   name: 'Send',
-  components: { 'tx-input': TXInput },
+  components: { 'outputs-form': OutputsForm },
   data() {
     return {
       txs: [],
-      confirmDelete: false,
       sending: false,
-      sent: false,
-      deletion: {
-        index: 0,
-        reset: null
-      },
-      rules: {
-        address: [
-          val => !!val || this.$t('msg_field_required'),
-          val =>
-            !(val.startsWith('ck') && val.length > 46) ||
-            this.$t('msg_full_address_unsupported')
-        ],
-        amount: [
-          val => !!val || this.$t('msg_field_required'),
-          val =>
-            new BN(val).gte(new BN(this.MIN_AMOUNT)) ||
-            this.$t('label_min_amount') + ' is ' + this.MIN_AMOUNT + ' CKB'
-        ]
-      }
+      sent: false
     }
   },
   async mounted() {
-    this.addTX()
+    this.txs.push({})
     this.$store.dispatch('account/LOAD_BALANCE')
+    this.$store.dispatch('chain/LOAD_FEE_RATE')
   },
   computed: {
     ...mapGetters('account', {
@@ -177,6 +103,10 @@ export default {
       balance: 'balanceGetter',
       loadingBalance: 'loadingBalanceGetter',
       MIN_AMOUNT: 'minAmountGetter'
+    }),
+    ...mapGetters('chain', {
+      feeRate: 'feeRateGetter',
+      fee: 'feeGetter'
     }),
     sendAmount() {
       if (!this.txs.length) return 0
@@ -186,26 +116,12 @@ export default {
     },
     remaining() {
       return subAmount(this.balance, fromCKB(this.sendAmount))
-    },
-    fee() {
-      return FEE
     }
   },
   methods: {
-    registerDelete(index, reset) {
-      this.deletion.index = index
-      this.deletion.reset = reset
-      this.confirmDelete = true
-    },
-    addTX() {
-      this.txs.push({})
-    },
-    deleteTX() {
-      this.txs.splice(this.deletion.index, 1)
-      this.deletion.reset && this.deletion.reset()
-    },
     resetTXs() {
       this.txs = [{}]
+      this.$refs.outputs_form.resetOutputs()
     },
     displayCKB(val) {
       return toCKB(val).split('.')
