@@ -32,7 +32,7 @@
             lazy-rules
           >
             <template v-slot:append>
-              <q-btn dense flat icon="crop_free" @click="scanQR" />
+              <q-btn dense flat icon="crop_free" @click="scanQR(index)" />
             </template>
           </q-input>
           <q-input
@@ -110,7 +110,8 @@ export default {
   computed: {
     ...mapGetters('account', {
       MIN_AMOUNT: 'minAmountGetter'
-    }),
+    })
+    /*
     _outputs: {
       get() {
         return this.outputs
@@ -119,15 +120,19 @@ export default {
         this.$emit('update:outputs', val)
       }
     }
+    */
   },
   methods: {
-    async scanQR() {
+    async scanQR(index) {
+      console.log('scanning output:', index)
       if (window.ethereum.isImToken) {
         // eslint-disable-next-line no-undef
         let address = await imToken.callPromisifyAPI('native.scanQRCode')
         address.startsWith('ethereum:') &&
           (address = address.split('ethereum:')[1])
-        this.$emit('update:address', address)
+        console.log('scaned address:', address)
+        let output = { ...this.outputs[index], address }
+        this.$set(this.outputs, index, output)
       }
     },
     registerDelete(index, reset) {
@@ -136,13 +141,13 @@ export default {
       this.confirmDelete = true
     },
     async addOutput() {
-      this._outputs.push({})
+      this.outputs.push({})
       // this.canAddOutput = false
       await this.validate()
       this.$refs.form.resetValidation()
     },
     async deleteOutput() {
-      this._outputs.splice(this.deletion.index, 1)
+      this.outputs.splice(this.deletion.index, 1)
       this.deletion.reset && this.deletion.reset()
       await this.validate()
       this.$refs.form.resetValidation()
