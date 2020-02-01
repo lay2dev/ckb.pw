@@ -4,11 +4,10 @@ import web3utils from 'web3-utils'
 import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import api from './api'
-import { sumAmount } from './utils'
 import txSize from './txSize'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
-const { BigInt } = ckb.utils.JSBI
+const JSBI = ckb.utils.JSBI
 export const MIN_FEE_RATE = 1000
 
 var keccak_code_hash
@@ -82,6 +81,7 @@ export const getFullAddress = (
 
 export const getLockHash = address => {
   if (address === '-') return null
+  console.log('lock hash for address', address)
   return ckb.utils.scriptToHash({
     args: address,
     hashType: 'data',
@@ -89,82 +89,67 @@ export const getLockHash = address => {
   })
 }
 
-/**
- * submit transfer eth to ckb transaction
- * @param {*} ethAddress
- * @param {*} capacity
- */
-export const transferETH2CKB = async (ethAddress, txs, fee = '1000') => {
-  const rawTransaction = await buildETH2CKBTx(ethAddress, txs, fee)
-  const signedTx = await signETHTransaction(ethAddress, rawTransaction)
-  await ckb.rpc.sendTransaction(signedTx)
+export const sendTx = async (cells, outputs, fee, address) => {
+  const rawTx = await buildTx(cells, outputs, fee, address)
+  const tx = await signTx(rawTx, address)
+  await ckb.rpc.sendTransaction(tx)
 }
 
 /**
  * build raw Tx for send etch locked cell to ckb locked cell
- * @param {*} fromAddress
- * @param {*} ethAddress
- * @param {*} txs
+ * @param {*} cells
+ * @param {*} outputs
+ * @param {*} fee
+ * @param {*} address
  */
-const buildETH2CKBTx = async (ethAddress, txs, fee) => {
+export const buildTx = async (cells, outputs, fee, address) => {
   const fromAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
+
   if (!keccak_code_hash) return null
-  const ethLockScript = {
-    hashType: 'data',
-    codeHash: keccak_code_hash,
-    args: ethAddress
-  }
-  const ethLockHash = ckb.utils.scriptToHash(ethLockScript)
 
-  const totalCapacity = txs.map(x => x.amount).reduce(sumAmount)
-
-  const unspentEthCells = await api.getUnspentCells(ethLockHash, totalCapacity)
-
-  const receivePairs = txs.map(x => {
-    let { address: toAddress, amount: capacity } = x
+  const receivePairs = outputs.map(o => {
+    let { address: toAddress, amount: capacity } = o
     if (toAddress.indexOf('ck') !== 0) {
       toAddress = fromAddress
     }
-    return { address: toAddress, capacity: BigInt(capacity) }
+    return { address: toAddress, capacity: JSBI.BigInt(capacity) }
   })
 
-  const unspentCellsMap = new Map()
+  const cellsMap = new Map()
   let mapKey = ckb.utils.scriptToHash({
     codeHash: ckb.config.secp256k1Dep.codeHash,
     hashType: ckb.config.secp256k1Dep.hashType,
     args: '0x' + ckb.utils.parseAddress(fromAddress, 'hex').slice(6)
   })
-  unspentCellsMap.set(mapKey, unspentEthCells)
+  cellsMap.set(mapKey, cells)
 
   //assemble transaction
   const txParams = {
     fromAddresses: [fromAddress],
     receivePairs,
-    // capacity: BigInt(capacity),
-    fee: '0x' + BigInt(fee).toString(16),
-    safeMode: true,
-    cells: unspentCellsMap,
+    fee: '0x' + JSBI.BigInt(fee).toString(16),
+    cells: cellsMap,
     deps: ckb.config.secp256k1Dep
   }
   console.log('rawTxParams', txParams)
-  const rawTransaction = ckb.generateRawTransaction(txParams)
 
-  console.log('rawTX: ', rawTransaction)
+  const rawTx = ckb.generateRawTransaction(txParams)
+  console.log('rawTX: ', rawTx)
 
-  rawTransaction.witnesses = rawTransaction.inputs.map(() => '0x')
-  rawTransaction.witnesses[0] = {
+  rawTx.witnesses = rawTx.inputs.map(() => '0x')
+  rawTx.witnesses[0] = {
     lock: '',
     inputType: '',
     outputType: ''
   }
 
-  for (let i in rawTransaction.outputs) {
-    if (i < txs.length) {
-      const { address: toAddress } = txs[i]
+  for (let i in rawTx.outputs) {
+    if (i < outputs.length) {
+      const { address: toAddress } = outputs[i]
       if (toAddress.indexOf('ck') === 0) {
-        // rawTransaction.outputs[0].lock.args = toAddress
+        // rawTx.outputs[0].lock.args = toAddress
       } else {
-        rawTransaction.outputs[i].lock = {
+        rawTx.outputs[i].lock = {
           hashType: 'data',
           codeHash: keccak_code_hash,
           args: toAddress
@@ -172,38 +157,38 @@ const buildETH2CKBTx = async (ethAddress, txs, fee) => {
       }
     } else {
       // change output
-      rawTransaction.outputs[i].lock = {
+      rawTx.outputs[i].lock = {
         hashType: 'data',
         codeHash: keccak_code_hash,
-        args: ethAddress
+        args: address
       }
     }
   }
 
-  // console.log('rawTransaction outputs', rawTransaction.outputs)
+  // console.log('rawTx outputs', rawTx.outputs)
 
   // set cell deps for transaction
   // dep1: eth lock script
   // dep2: secp256k1_data_bin script in genesisBlock
-  rawTransaction.cellDeps = cellDeps
-  // console.log(rawTransaction.cellDeps)
-  return rawTransaction
+  rawTx.cellDeps = cellDeps
+  // console.log(rawTx.cellDeps)
+  return rawTx
 }
 
 /**
  * sign one eth lock input
  * @param {*} ckb
- * @param {*} rawTransaction
+ * @param {*} rawTx
  */
-const signETHTransaction = async (ethAddress, rawTransaction) => {
-  // console.log('rawTransaction', rawTransaction)
-  const transactionHash = ckb.utils.rawTransactionToHash(rawTransaction)
+export const signTx = async (rawTx, address) => {
+  const { hexToBytes, serializeWitnessArgs, toHexInLittleEndian } = ckb.utils
+
+  const txHash = ckb.utils.rawTransactionToHash(rawTx)
+
   const emptyWitness = {
-    ...rawTransaction.witnesses[0],
+    ...rawTx.witnesses[0],
     lock: `0x${'0'.repeat(130)}`
   }
-
-  let { hexToBytes, serializeWitnessArgs, toHexInLittleEndian } = ckb.utils
 
   const serializedEmptyWitnessBytes = hexToBytes(
     serializeWitnessArgs(emptyWitness)
@@ -211,7 +196,7 @@ const signETHTransaction = async (ethAddress, rawTransaction) => {
   const serialziedEmptyWitnessSize = serializedEmptyWitnessBytes.length
 
   // Calculate keccak256 hash for rawTransaction
-  let hashBytes = hexToBytes(transactionHash)
+  let hashBytes = hexToBytes(txHash)
 
   hashBytes = mergeTypedArraysUnsafe(
     hashBytes,
@@ -221,7 +206,7 @@ const signETHTransaction = async (ethAddress, rawTransaction) => {
   )
   hashBytes = mergeTypedArraysUnsafe(hashBytes, serializedEmptyWitnessBytes)
 
-  rawTransaction.witnesses.slice(1).forEach(w => {
+  rawTx.witnesses.slice(1).forEach(w => {
     const bytes = hexToBytes(
       typeof w === 'string' ? w : serializeWitnessArgs(w)
     )
@@ -236,7 +221,7 @@ const signETHTransaction = async (ethAddress, rawTransaction) => {
   // console.log('message is', message)
 
   // Ehereum Personal Sign for keccak256 hash of rawTransaction
-  let signatureHexString = await signWitness(message, ethAddress)
+  let signatureHexString = await signWitness(message, address)
   let signatureObj = ethUtil.fromRpcSig(signatureHexString)
   signatureObj.v -= 27
   signatureHexString = ethUtil.bufferToHex(
@@ -246,35 +231,20 @@ const signETHTransaction = async (ethAddress, rawTransaction) => {
       ethUtil.toBuffer(signatureObj.v)
     ])
   )
-  // const keyPair = new ECPair(privateKey)
-  // emptyWitness.lock = keyPair.signRecoverable(message)
-  // let privateKeyBuffer = new Buffer(privateKey.replace('0x', ''), 'hex')
-  // let messageHashBuffer = new Buffer(message.replace('0x', ''), 'hex')
-  // let signatureObj = ethUtil.ecsign(messageHashBuffer, privateKeyBuffer)
-  // signatureObj.v -= 27
-  // let signatureHexString = ethUtil.bufferToHex(
-  //   Buffer.concat([
-  //     ethUtil.setLengthLeft(signatureObj.r, 32),
-  //     ethUtil.setLengthLeft(signatureObj.s, 32),
-  //     ethUtil.toBuffer(signatureObj.v)
-  //   ])
-  // )
+
   emptyWitness.lock = signatureHexString
 
-  // console.log('emptyWitness is', emptyWitness)
   let signedWitnesses = [
     serializeWitnessArgs(emptyWitness),
-    ...rawTransaction.witnesses.slice(1)
+    ...rawTx.witnesses.slice(1)
   ]
 
   let tx = {
-    ...rawTransaction,
+    ...rawTx,
     witnesses: signedWitnesses.map(witness =>
       typeof witness === 'string' ? witness : serializeWitnessArgs(witness)
     )
   }
-
-  // console.log('signedTx', tx)
 
   return tx
 }
@@ -330,12 +300,11 @@ export const signWitness = async (message, from) => {
   return witness
 }
 
-export const getFee = async function(feeRate, address, txs) {
-  console.log('address', address)
-  let rawTx = await buildETH2CKBTx(address, txs)
+export const getFee = async function(feeRate, cells, outputs) {
+  let rawTx = await buildTx(cells, outputs)
   console.log('raw tx: ', rawTx)
   if (!rawTx) return 0
   let size = txSize(rawTx)
   console.log('tx size: ', size)
-  return ckb.utils.JSBI.multiply(BigInt(size) * BigInt(feeRate))
+  return JSBI.multiply(JSBI.BigInt(size) * JSBI.BigInt(feeRate)).toString()
 }

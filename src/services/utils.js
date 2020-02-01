@@ -25,6 +25,15 @@ export const subAmount = (a, b) => {
   return A.sub(B).toString()
 }
 
+export const cmpAmount = (a, b) => {
+  const A = new BN(safe(a))
+  const B = new BN(safe(b))
+  console.log('cmp:', A.toString(), B.toString())
+  if (A.gt(B)) return 'gt'
+  if (A.lt(B)) return 'lt'
+  return 'eq'
+}
+
 // eslint-disable-next-line prettier/prettier
 const unitMap = { 'ckb': '100000000' }
 const zero = new BN(0)

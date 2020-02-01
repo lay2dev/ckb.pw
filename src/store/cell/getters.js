@@ -1,4 +1,1 @@
-/*
-export function someGetter (state) {
-}
-*/
+export const unSpentGetter = state => state.unSpent

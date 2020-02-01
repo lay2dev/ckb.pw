@@ -1,6 +1,6 @@
 <template>
   <q-page padding>
-    <outputs-form ref="outputs_form" :outputs="txs" />
+    <outputs-form ref="outputs_form" :outputs="outputs" />
     <q-card>
       <q-card-section class="row">
         <div class="col column">
@@ -69,6 +69,7 @@
             flat
             :label="$t('label_send_more')"
             color="primary"
+            @click="resetTXs"
             v-close-popup
           />
         </q-card-actions>
@@ -80,20 +81,26 @@
 <script>
 import OutputsForm from '../components/OutputsForm'
 import { mapGetters } from 'vuex'
-import { sumAmount, subAmount, toCKB, fromCKB } from '../services/utils'
-import { transferETH2CKB } from '../services/chain'
+import {
+  sumAmount,
+  subAmount,
+  cmpAmount,
+  toCKB,
+  fromCKB
+} from '../services/utils'
+import { sendTx } from '../services/chain'
 export default {
   name: 'Send',
   components: { 'outputs-form': OutputsForm },
   data() {
     return {
-      txs: [],
+      outputs: [],
       sending: false,
       sent: false
     }
   },
   async mounted() {
-    this.txs.push({})
+    this.outputs.push({})
     this.$store.dispatch('account/LOAD_BALANCE')
     this.$store.dispatch('chain/LOAD_FEE_RATE')
   },
@@ -105,22 +112,27 @@ export default {
       MIN_AMOUNT: 'minAmountGetter'
     }),
     ...mapGetters('chain', {
-      feeRate: 'feeRateGetter',
-      fee: 'feeGetter'
+      feeRate: 'feeRateGetter'
+    }),
+    ...mapGetters('cell', {
+      unSpent: 'unSpentGetter'
     }),
     sendAmount() {
-      if (!this.txs.length) return 0
-      let amount = this.txs.map(tx => tx.amount).reduce(sumAmount)
+      if (!this.outputs.length) return 0
+      let amount = this.outputs.map(tx => tx.amount).reduce(sumAmount)
       !amount && (amount = 0)
       return amount
     },
     remaining() {
       return subAmount(this.balance, fromCKB(this.sendAmount))
+    },
+    fee() {
+      return '1000'
     }
   },
   methods: {
     resetTXs() {
-      this.txs = [{}]
+      this.outputs = [{}]
       this.$refs.outputs_form.resetOutputs()
     },
     displayCKB(val) {
@@ -129,12 +141,15 @@ export default {
     async send() {
       this.sending = true
       try {
-        await transferETH2CKB(
-          this.address,
-          this.txs.map(x => {
-            return { address: x.address, amount: fromCKB(x.amount) }
-          })
+        await sendTx(
+          this.unSpent.cells,
+          this.outputs.map(({ address, amount }) => {
+            return { address, amount: fromCKB(amount) }
+          }),
+          this.fee,
+          this.address
         )
+        this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS')
         this.sent = true
       } catch (e) {
         this.$q.notify({
@@ -150,6 +165,15 @@ export default {
   watch: {
     async address() {
       this.$store.dispatch('account/LOAD_BALANCE')
+    },
+    async sendAmount(newVal) {
+      const needed = fromCKB(newVal)
+      if (cmpAmount(needed, this.unSpent.capacity) === 'gt') {
+        this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
+          address: this.address,
+          capacity: needed
+        })
+      }
     }
   }
 }
