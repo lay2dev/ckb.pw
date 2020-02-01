@@ -109,21 +109,20 @@ export default {
       try {
         console.log('to copy: ', this.chosenAddress)
         await copyToClipboard(this.chosenAddress)
-        this.$q.notify({
-          message: this.$t('msg_copy_success'),
-          position: 'center',
-          icon: 'check',
-          timeout: 1000
-        })
       } catch (e) {
-        console.log(e) // long address not work on android
-        this.$q.notify({
-          message: this.$t('msg_copy_success'),
-          position: 'center',
-          icon: 'check',
-          timeout: 1000
-        })
+        if (window.ethereum.isImToken) {
+          // eslint-disable-next-line no-undef
+          imToken.callAPI('native.setClipboard', this.chosenAddress)
+        } else {
+          console.log(e) // long address not work on android
+        }
       }
+      this.$q.notify({
+        message: this.$t('msg_copy_success'),
+        position: 'center',
+        icon: 'check',
+        timeout: 1000
+      })
     },
     displayBalance: balance => toCKB(balance).split('.'),
     async loadBalance() {
