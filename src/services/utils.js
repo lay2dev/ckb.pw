@@ -129,9 +129,11 @@ export const verifyAddress = address => {
   if (typeof address !== 'string') return null
 
   // check if is eth address
+  console.log('verify address:', address)
   const isEthAddress = /^0x[a-fA-F0-9]{40}$/.test(address)
   if (isEthAddress) return 'eth'
 
+  console.log('not eth address')
   let maybe = null
 
   address.startsWith('ckb') && (maybe = 'ckb')

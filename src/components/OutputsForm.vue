@@ -111,26 +111,24 @@ export default {
     ...mapGetters('account', {
       MIN_AMOUNT: 'minAmountGetter'
     })
-    /*
-    _outputs: {
-      get() {
-        return this.outputs
-      },
-      set(val) {
-        this.$emit('update:outputs', val)
-      }
-    }
-    */
   },
   methods: {
     async scanQR(index) {
-      console.log('scanning output:', index)
       if (window.ethereum.isImToken) {
         // eslint-disable-next-line no-undef
         let address = await imToken.callPromisifyAPI('native.scanQRCode')
-        address.startsWith('ethereum:') &&
-          (address = address.split('ethereum:')[1])
         console.log('scaned address:', address)
+
+        // check if is eth address
+        let ethAddress = address.match(/0x[a-fA-F0-9]{40}/)
+        ethAddress && (address = ethAddress[0])
+
+        // check if is ckb address
+        let ckbAddress = address.match(/ck[bt]1.{91}/)
+        !ckbAddress && (ckbAddress = address.match(/ck[bt]1.{42}/))
+        ckbAddress && (address = ckbAddress[0])
+
+        console.log('address:', address)
         let output = { ...this.outputs[index], address }
         this.$set(this.outputs, index, output)
       }
@@ -172,11 +170,9 @@ export default {
       }
       return []
     },
-    async validate(val) {
+    async validate() {
       await sleep(100)
       this.canAddOutput = await this.$refs.form.validate()
-      console.log('input', val)
-      console.log('valid', this.canAddOutput)
     }
   }
 }
