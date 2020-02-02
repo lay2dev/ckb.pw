@@ -5,6 +5,7 @@ import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import api from './api'
 import txSize from './txSize'
+import { colors } from 'quasar'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
 const JSBI = ckb.utils.JSBI
@@ -13,13 +14,25 @@ export const MIN_FEE_RATE = 1000
 var keccak_code_hash
 var cellDeps
 
-export const init = async () => {
+export const init = async ctx => {
   let config = await api.getConfig()
   keccak_code_hash = config.keccak_code_hash
   cellDeps = config.cellDeps
+
+  imTokenInit(ctx)
 }
 
-export const getAccount = async context => {
+function imTokenInit(ctx) {
+  if (!window.ethereum.isImToken) return
+
+  imToken.callAPI('navigator.configure', {
+    navigationStyle: 'transparent',
+    navigatorColor: colors.getBrand('dark')
+  })
+  ctx.$store.commit('config/UPDATE', { showBar: true, barHeight: 23 })
+}
+
+export const getAccount = async ctx => {
   const getAccountPromise = new Promise((resolve, reject) => {
     window.web3.eth.getAccounts((err, result) => {
       err && reject(err)
@@ -35,7 +48,7 @@ export const getAccount = async context => {
         const accounts = await getAccountPromise
         account = accounts[0]
         ethereum.on('accountsChanged', function(accounts) {
-          context.$store.commit('account/SET_ADDRESS', accounts[0])
+          ctx.$store.commit('account/SET_ADDRESS', accounts[0])
         })
         resolve(account)
       } catch (err) {
@@ -81,7 +94,6 @@ export const getFullAddress = (
 
 export const getLockHash = address => {
   if (address === '-') return null
-  console.log('lock hash for address', address)
   return ckb.utils.scriptToHash({
     args: address,
     hashType: 'data',

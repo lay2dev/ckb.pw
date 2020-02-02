@@ -1,5 +1,5 @@
 <template>
-  <q-page class="bg-grey column q-pa-sm no-scroll">
+  <q-page id="view" class="bg-grey column q-pa-sm no-scroll">
     <q-card id="metaCard" square class="q-mb-sm">
       <q-card-section
         @click="loadBalance()"
@@ -86,9 +86,10 @@ export default {
   data() {
     return {
       tab: 'account',
+      viewHeight: 0,
+      cardHeight: 0,
       receiveDialog: false,
       showFullAddress: false,
-      listHeight: 0,
       splitter: 10
     }
   },
@@ -100,6 +101,21 @@ export default {
       platform: 'platformGetter',
       txs: 'txsGetter'
     }),
+    ...mapGetters('config', {
+      barHeight: 'barHeightGetter',
+      topOffset: 'topOffsetGetter',
+      bottomOffset: 'bottomOffsetGetter'
+    }),
+    listHeight() {
+      const offset = 240 + this.topOffset + this.bottomOffset + this.barHeight
+      console.log('offset', offset)
+      try {
+        let height = this.viewHeight - offset + 'px'
+        return height
+      } catch (e) {
+        return 0
+      }
+    },
     chosenAddress() {
       return this.showFullAddress ? getFullAddress(this.address) : this.address
     }
@@ -133,12 +149,10 @@ export default {
     }
   },
   async mounted() {
-    this.listHeight =
-      this.$q.screen.height -
-      160 -
-      dom.height(document.getElementById('metaCard')) +
-      'px'
+    this.cardHeight = dom.height(document.getElementById('metaCard'))
+    this.viewHeight = dom.height(document.getElementById('view'))
     await Promise.all([this.loadBalance(), this.loadTXs({})])
+    this.$forceUpdate()
   },
   watch: {
     async address() {

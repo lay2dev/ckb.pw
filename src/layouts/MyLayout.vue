@@ -1,6 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header reveal elevated class="bg-dark">
+    <q-header reveal elevated class="bg-dark header">
+      <q-bar v-if="showBar && !isX" dense class="bg-dark text-white" />
       <q-toolbar>
         <q-toolbar-title>
           <center>
@@ -20,7 +21,7 @@
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-footer elevated class="bg-dark">
+    <q-footer elevated class="bg-dark footer">
       <q-tabs align="justify" narrow-indicator>
         <q-route-tab to="/" exact :label="$t('tab_account')" />
         <q-route-tab to="/explore" exact :label="$t('tab_explore')" />
@@ -30,6 +31,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { init, getAccount, loadDeps } from '../services/chain'
 import vConsole from 'vconsole'
 export default {
@@ -38,8 +40,15 @@ export default {
   data() {
     return {
       isHome: true,
+      isX: false,
       tab: 'account'
     }
+  },
+  computed: {
+    ...mapGetters('config', {
+      showBar: 'showBarGetter',
+      barHeight: 'barHeightGetter'
+    })
   },
   created: function() {
     if (this.$route.query.ctl == 5) {
@@ -47,8 +56,31 @@ export default {
       console.log('vConsole loaded')
     }
     window.addEventListener('load', async () => {
-      await init()
+      await init(this)
       console.log('inited')
+
+      const header = document.querySelector('.header')
+      const footer = document.querySelector('.footer')
+      let topOffset = parseInt(
+        getComputedStyle(header).paddingTop.split('px')[0]
+      )
+      let bottomOffset = parseInt(
+        getComputedStyle(footer).paddingBottom.split('px')[0]
+      )
+      let barHeight = this.barHeight
+
+      if (topOffset) {
+        this.isX = true
+        barHeight = 0
+      }
+
+      this.$store.commit('config/UPDATE', {
+        barHeight,
+        topOffset,
+        bottomOffset
+      })
+      console.log(this.isX, topOffset, bottomOffset, barHeight)
+
       let address = await getAccount(this)
       console.log('loaded address', address)
 
@@ -90,3 +122,13 @@ moment.updateLocale('en', {
   }
 })
 </script>
+<style lang="scss" scoped>
+.header {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+}
+.footer {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+</style>

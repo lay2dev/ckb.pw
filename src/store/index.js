@@ -5,6 +5,7 @@ import account from './account'
 import cell from './cell'
 import dao from './dao'
 import chain from './chain'
+import config from './config'
 
 Vue.use(Vuex)
 
@@ -23,7 +24,8 @@ export default function(/* { ssrContext } */) {
       account,
       cell,
       dao,
-      chain
+      chain,
+      config
     },
 
     // enable strict mode (adds overhead!)
