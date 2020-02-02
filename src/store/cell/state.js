@@ -3,6 +3,7 @@ export default function() {
     total: 0,
     free: 0,
     types: [],
+    loadingUnSpent: false,
     unSpent: {
       capacity: '',
       cells: []

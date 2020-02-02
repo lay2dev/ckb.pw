@@ -52,8 +52,8 @@
           class="col"
           color="primary"
           :label="$t('btn_send')"
-          :loading="sending"
-          :disable="!outputsReady || sending"
+          :loading="sending || loadingUnSpent"
+          :disable="!outputsReady || loadingUnSpent || sending"
           @click="send"
         >
           <template v-slot:loading>
@@ -129,7 +129,8 @@ export default {
       feeRate: 'feeRateGetter'
     }),
     ...mapGetters('cell', {
-      unSpent: 'unSpentGetter'
+      unSpent: 'unSpentGetter',
+      loadingUnSpent: 'loadingUnSpentGetter'
     }),
     sendAmount() {
       if (!this.outputs.length) return 0
