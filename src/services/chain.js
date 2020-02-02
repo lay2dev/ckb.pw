@@ -90,7 +90,7 @@ export const getLockHash = address => {
 }
 
 export const sendTx = async (cells, outputs, fee, address) => {
-  const rawTx = await buildTx(cells, outputs, fee, address)
+  const rawTx = buildTx(cells, outputs, fee, address)
   const tx = await signTx(rawTx, address)
   await ckb.rpc.sendTransaction(tx)
 }
@@ -102,7 +102,7 @@ export const sendTx = async (cells, outputs, fee, address) => {
  * @param {*} fee
  * @param {*} address
  */
-export const buildTx = async (cells, outputs, fee, address) => {
+export const buildTx = (cells, outputs, fee, address) => {
   const fromAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
 
   if (!keccak_code_hash) return null
@@ -300,11 +300,15 @@ export const signWitness = async (message, from) => {
   return witness
 }
 
-export const getFee = async function(feeRate, cells, outputs) {
-  let rawTx = await buildTx(cells, outputs)
-  console.log('raw tx: ', rawTx)
-  if (!rawTx) return 0
-  let size = txSize(rawTx)
-  console.log('tx size: ', size)
-  return JSBI.multiply(JSBI.BigInt(size) * JSBI.BigInt(feeRate)).toString()
+export const getFee = function(feeRate, cells, outputs, address) {
+  const rawTx = buildTx(cells, outputs, '0', address)
+  if (!rawTx) return '0'
+
+  const size = txSize(rawTx)
+  const fee = JSBI.divide(
+    JSBI.multiply(JSBI.BigInt(size), JSBI.BigInt(feeRate)),
+    JSBI.BigInt(1000)
+  )
+
+  return fee.toString()
 }

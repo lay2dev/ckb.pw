@@ -1,9 +1,13 @@
-import { serializeOutput } from '@nervosnetwork/ckb-sdk-utils/lib/serialization/transaction'
+import {
+  serializeOutput,
+  serializeWitnessArgs
+} from '@nervosnetwork/ckb-sdk-utils/lib/serialization/transaction'
 import { serializeFixVec } from '@nervosnetwork/ckb-sdk-utils/lib/serialization'
 
 const SERIALIZED_OFFSET_BYTESIZE = 4
 
-const base = () => 68 + SERIALIZED_OFFSET_BYTESIZE
+// const base = () => 68 + SERIALIZED_OFFSET_BYTESIZE
+const base = () => 68 + 69 + SERIALIZED_OFFSET_BYTESIZE
 
 const cellDep = () => 37
 
@@ -22,6 +26,7 @@ const outputData = data => {
 }
 
 const witness = witness => {
+  if (typeof witness !== 'string') witness = serializeWitnessArgs(witness)
   const bytes = serializeFixVec(witness)
   return byteLength(bytes) + SERIALIZED_OFFSET_BYTESIZE
 }

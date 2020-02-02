@@ -1,5 +1,6 @@
 // This is just an example,
 // so you can safely delete all default props below
+import { MIN_FEE_RATE } from '../../services/chain'
 
 export default {
   title: 'CKB P Wallet',
@@ -14,6 +15,7 @@ export default {
   btn_recycle: 'Recycle',
   btn_confirm: 'Confirm',
   btn_cancel: 'Cancel',
+  btn_change: 'Change',
   btn_clear: 'Clear',
   btn_send: 'Send',
   btn_copy: 'Copy',
@@ -36,6 +38,9 @@ export default {
   label_locked: 'Locked',
   label_in_dao: 'in DAO',
   label_revenue: 'Revenue',
+  label_advanced: 'Advanced',
+  label_cheap: 'Cheap',
+  label_fast: 'Fast',
 
   hint_address: 'ETH and CKB addresses are supported',
   hint_amount: 'Min transfer amount is ',
@@ -45,6 +50,7 @@ export default {
   msg_sent_success: 'Transaction Sent',
   msg_field_required: 'Field is required',
   msg_invalid_address: 'Invalid Address',
+  msg_min_fee_rate: `Min fee rate is ${MIN_FEE_RATE} Shannons / KB`,
   msg_confirm_delete: 'Proceed Deleting ?',
   msg_copy_success: 'Copied to Clipboard!'
 }

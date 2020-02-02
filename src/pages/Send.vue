@@ -1,6 +1,10 @@
 <template>
   <q-page padding>
-    <outputs-form ref="outputs_form" :outputs="outputs" />
+    <outputs-form
+      ref="outputs_form"
+      :outputs="outputs"
+      :outputsReady.sync="outputsReady"
+    />
     <q-card>
       <q-card-section class="row">
         <div class="col column">
@@ -13,20 +17,27 @@
             <span v-if="displayCKB(remaining)[1]" class="text-dig">{{
               '.' + displayCKB(remaining)[1]
             }}</span>
-            <span class="q-ml-xs">CKB</span>
+            <span class="text-caption q-ml-xs">CKB</span>
           </div>
         </div>
-        <div class="col column">
-          <span class="text-blue-grey-4">{{ $t('label_fee') + ':' }}</span>
-          <div class="row items-baseline">
-            <strong>{{ displayCKB(fee)[0] }}</strong>
-            <span v-if="displayCKB(fee)[1]" class="text-dig">{{
-              '.' + displayCKB(fee)[1]
-            }}</span>
-            <span class="q-ml-xs">CKB</span>
+        <q-separator class="q-ml-xs" vertical />
+        <div class="col row justify-between items-center">
+          <div class="column q-ml-sm">
+            <span class="text-blue-grey-4">{{ $t('label_fee') + ':' }}</span>
+            <div class="row items-baseline">
+              <strong>{{ displayCKB(fee)[0] }}</strong>
+              <span v-if="displayCKB(fee)[1]" class="text-dig">{{
+                '.' + displayCKB(fee)[1]
+              }}</span>
+              <span class="text-caption q-ml-xs">CKB</span>
+            </div>
           </div>
+          <q-toggle v-model="showFeeRate" icon="edit" size="sm" />
         </div>
       </q-card-section>
+      <q-slide-transition>
+        <fee-rate v-show="showFeeRate" />
+      </q-slide-transition>
       <q-separator />
       <q-card-actions align="around">
         <q-btn
@@ -42,7 +53,7 @@
           color="primary"
           :label="$t('btn_send')"
           :loading="sending"
-          :disable="sending"
+          :disable="!outputsReady || sending"
           @click="send"
         >
           <template v-slot:loading>
@@ -80,6 +91,7 @@
 
 <script>
 import OutputsForm from '../components/OutputsForm'
+import FeeRate from '../components/FeeRate'
 import { mapGetters } from 'vuex'
 import {
   sumAmount,
@@ -88,15 +100,17 @@ import {
   toCKB,
   fromCKB
 } from '../services/utils'
-import { sendTx } from '../services/chain'
+import { sendTx, getFee } from '../services/chain'
 export default {
   name: 'Send',
-  components: { 'outputs-form': OutputsForm },
+  components: { 'outputs-form': OutputsForm, 'fee-rate': FeeRate },
   data() {
     return {
       outputs: [],
+      outputsReady: false,
       sending: false,
-      sent: false
+      sent: false,
+      showFeeRate: false
     }
   },
   async mounted() {
@@ -127,7 +141,23 @@ export default {
       return subAmount(this.balance, fromCKB(this.sendAmount))
     },
     fee() {
-      return '1000'
+      if (this.outputsReady) {
+        try {
+          const fee = getFee(
+            this.feeRate,
+            this.unSpent.cells,
+            this.outputs.map(({ address, amount }) => {
+              return { address, amount: fromCKB(amount) }
+            }),
+            this.address
+          )
+          console.log('FEE', fee)
+          if (fee) return fee
+        } catch (e) {
+          console.log(e.toString())
+        }
+      }
+      return '0'
     }
   },
   methods: {

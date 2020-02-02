@@ -42,7 +42,7 @@
             clearable
             clear-icon="close"
             no-error-icon
-            debounce="300"
+            debounce="500"
             v-model="output.amount"
             :label="$t('label_amount')"
             suffix="CKB"
@@ -58,9 +58,9 @@
       outline
       :ripple="false"
       class="full-width q-ma-xs"
-      :text-color="canAddOutput ? 'primary' : 'grey'"
+      :text-color="outputsReady ? 'primary' : 'grey'"
       icon="add"
-      :disable="!canAddOutput"
+      :disable="!outputsReady"
       @click="addOutput"
     />
     <q-dialog v-model="confirmDelete" persistent>
@@ -96,10 +96,9 @@ import { sleep, verifyAddress } from '../services/utils'
 import BN from 'bn.js'
 export default {
   name: 'OutputsForm',
-  props: ['outputs'],
+  props: ['outputs', 'outputsReady'],
   data() {
     return {
-      canAddOutput: false,
       confirmDelete: false,
       deletion: {
         index: 0,
@@ -140,7 +139,7 @@ export default {
     },
     async addOutput() {
       this.outputs.push({})
-      // this.canAddOutput = false
+      // this.outputsReady = false
       await this.validate()
       this.$refs.form.resetValidation()
     },
@@ -151,7 +150,7 @@ export default {
       this.$refs.form.resetValidation()
     },
     resetOutputs() {
-      this.canAddOutput = false
+      this.$emit('update:outputsReady', false)
       this.$refs.form.resetValidation()
     },
     rules(which) {
@@ -172,7 +171,8 @@ export default {
     },
     async validate() {
       await sleep(100)
-      this.canAddOutput = await this.$refs.form.validate()
+      let res = await this.$refs.form.validate()
+      this.$emit('update:outputsReady', res)
     }
   }
 }
