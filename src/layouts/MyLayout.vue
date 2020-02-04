@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header reveal elevated class="bg-dark header">
+    <q-header v-if="showHeader" reveal elevated class="bg-dark header">
       <q-bar v-if="showBar && !isX" dense class="bg-dark text-white" />
       <q-toolbar>
         <q-toolbar-title>
@@ -21,7 +21,7 @@
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-footer elevated class="bg-dark footer">
+    <q-footer v-if="showFooter" elevated class="bg-dark footer">
       <q-tabs align="justify" narrow-indicator>
         <q-route-tab to="/" exact :label="$t('tab_account')" />
         <q-route-tab to="/explore" exact :label="$t('tab_explore')" />
@@ -41,12 +41,16 @@ export default {
     return {
       isHome: true,
       isX: false,
+      showHeader: true,
+      showFooter: true,
       tab: 'account'
     }
   },
   computed: {
     ...mapGetters('config', {
       showBar: 'showBarGetter',
+      // showHeader: 'showHeaderGetter',
+      // showFooter: 'showFooterGetter',
       barHeight: 'barHeightGetter'
     })
   },
@@ -96,6 +100,8 @@ export default {
   watch: {
     '$route.path': function(newVal) {
       this.isHome = newVal === '/account' || newVal === '/explore'
+      this.showFooter = newVal !== '/txs'
+      console.log('show footer', this.showFooter)
     }
   }
 }

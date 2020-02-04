@@ -19,6 +19,7 @@ export default {
   btn_clear: 'Clear',
   btn_send: 'Send',
   btn_copy: 'Copy',
+  btn_view_more: 'View More',
 
   label_address: 'Address',
   label_amount: 'Amount',

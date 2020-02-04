@@ -35,5 +35,16 @@ export function SET_TXS(state, payload) {
 }
 
 export function APPEND_TXS(state, payload) {
-  state.txs = [...state.txs, ...payload]
+  state.txs = distinctObjectArray([...state.txs, ...payload], 'hash')
+}
+
+function distinctObjectArray(arr, prop) {
+  const map = new Map()
+  for (let obj of arr) {
+    if (!map.has(obj[prop])) {
+      map.set(obj[prop], obj)
+    }
+  }
+
+  return Array.from(map.values())
 }

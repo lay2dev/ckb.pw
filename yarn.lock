@@ -4962,7 +4962,7 @@ js-yaml@^3.13.0, js-yaml@^3.13.1:
     argparse "^1.0.7"
     esprima "^4.0.0"
 
-jsbi@3.1.1, jsbi@^3.1.1:
+jsbi@3.1.1:
   version "3.1.1"
   resolved "https://registry.npm.taobao.org/jsbi/download/jsbi-3.1.1.tgz#8ea18b3e08d102c6cc09acaa9a099921d775f4fa"
   integrity sha1-jqGLPgjRAsbMCayqmgmZIdd19Po=

@@ -19,7 +19,7 @@ export async function LOAD_BALANCE({ commit, getters }) {
 
 export async function LOAD_TXS(
   { commit, getters },
-  { lastHash, size = 20, type }
+  { lastHash, size = 20, type = 'all' }
 ) {
   try {
     const lockHash = getLockHash(getters.addressGetter)

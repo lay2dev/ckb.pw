@@ -23,6 +23,10 @@ const routes = [
         path: 'dao',
         name: 'dao',
         component: () => import('pages/Dao.vue')
+      },
+      {
+        path: '/txs',
+        component: () => import('pages/TxRecords.vue')
       }
     ]
   }

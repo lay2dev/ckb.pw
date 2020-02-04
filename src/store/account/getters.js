@@ -1,27 +1,15 @@
-export function addressGetter(state) {
-  return state.address
-}
-export function balanceGetter(state) {
-  return state.capacity.total
-}
-export function platformGetter(state) {
-  return state.platform
-}
+export const addressGetter = state => state.address
 
-export function minAmountGetter() {
-  return 61
-}
+export const balanceGetter = state => state.capacity.total
 
-export function loadingBalanceGetter(state) {
-  return state.loadingBalance
-}
+export const platformGetter = state => state.platform
 
-export function loadingTXsGetter(state) {
-  return state.loadingTXs
-}
+export const minAmountGetter = () => 61
 
-export function txsGetter(state) {
-  return state.txs
-}
+export const loadingBalanceGetter = state => state.loadingBalance
+
+export const loadingTXsGetter = state => state.loadingTXs
+
+export const txsGetter = state => state.txs
 
 export const noMoreTXsGetter = state => state.noMoreTXs
