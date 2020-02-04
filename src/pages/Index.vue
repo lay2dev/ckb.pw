@@ -4,6 +4,7 @@
     <keep-alive>
       <tx-card />
     </keep-alive>
+    <dash-card />
   </q-page>
 </template>
 
@@ -11,12 +12,14 @@
 import { mapGetters } from 'vuex'
 import MetaCard from '../components/MetaCard'
 import TxCard from '../components/TxCard'
+import DashCard from '../components/DashCard'
 
 export default {
   name: 'PageIndex',
   components: {
     MetaCard,
-    TxCard
+    TxCard,
+    DashCard
   },
   data() {
     return {

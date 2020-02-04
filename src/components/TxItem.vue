@@ -1,5 +1,5 @@
 <template>
-  <q-item :dense="dense" clickable @click="checkTX(tx)" v-ripple>
+  <q-item class="q-pa-sm" clickable @click="checkTX(tx)" v-ripple>
     <q-item-section avatar>
       <q-avatar
         v-if="tx.direction === 'in'"
@@ -76,3 +76,16 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.text-balance-int {
+  font-size: 1.1em;
+  font-weight: 500;
+}
+.in-text {
+  color: $primary;
+}
+.out-text {
+  color: $blue-grey-7;
+}
+</style>

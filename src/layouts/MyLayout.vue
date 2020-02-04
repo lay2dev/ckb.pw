@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header v-if="showHeader" reveal elevated class="bg-dark header">
+    <q-header v-if="showHeader" elevated class="bg-dark header">
       <q-bar v-if="showBar && !isX" dense class="bg-dark text-white" />
       <q-toolbar>
         <q-toolbar-title>
@@ -18,15 +18,15 @@
         @click="$router.back()"
       />
     </q-header>
-    <q-page-container>
+    <q-page-container class="container">
       <router-view />
     </q-page-container>
-    <q-footer v-if="showFooter" elevated class="bg-dark footer">
+    <!-- <q-footer v-if="showFooter" elevated class="bg-dark footer">
       <q-tabs align="justify" narrow-indicator>
         <q-route-tab to="/" exact :label="$t('tab_account')" />
         <q-route-tab to="/explore" exact :label="$t('tab_explore')" />
       </q-tabs>
-    </q-footer>
+    </q-footer> -->
   </q-layout>
 </template>
 
@@ -59,18 +59,22 @@ export default {
       new vConsole()
       console.log('vConsole loaded')
     }
+
+    // detecting locale
+    this.$i18n.locale = this.$q.lang.getLocale()
+
     window.addEventListener('load', async () => {
       await init(this)
       console.log('inited')
 
       const header = document.querySelector('.header')
-      const footer = document.querySelector('.footer')
+      // const footer = document.querySelector('.footer')
       let topOffset = parseInt(
         getComputedStyle(header).paddingTop.split('px')[0]
       )
-      let bottomOffset = parseInt(
-        getComputedStyle(footer).paddingBottom.split('px')[0]
-      )
+      // let bottomOffset = parseInt(
+      //   getComputedStyle(footer).paddingBottom.split('px')[0]
+      // )
       let barHeight = this.barHeight
 
       if (topOffset) {
@@ -80,10 +84,10 @@ export default {
 
       this.$store.commit('config/UPDATE', {
         barHeight,
-        topOffset,
-        bottomOffset
+        topOffset
+        // bottomOffset
       })
-      console.log(this.isX, topOffset, bottomOffset, barHeight)
+      // console.log(this.isX, topOffset, bottomOffset, barHeight)
 
       let address = await getAccount(this)
       console.log('loaded address', address)
@@ -99,9 +103,9 @@ export default {
   },
   watch: {
     '$route.path': function(newVal) {
-      this.isHome = newVal === '/account' || newVal === '/explore'
-      this.showFooter = newVal !== '/txs'
-      console.log('show footer', this.showFooter)
+      this.isHome = newVal === '/account'
+      // this.showFooter = newVal !== '/txs'
+      // console.log('show footer', this.showFooter)
     }
   }
 }
@@ -133,8 +137,8 @@ moment.updateLocale('en', {
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
 }
-.footer {
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
-}
+// .container {
+//   padding-bottom: constant(safe-area-inset-bottom);
+//   padding-bottom: env(safe-area-inset-bottom);
+// }
 </style>

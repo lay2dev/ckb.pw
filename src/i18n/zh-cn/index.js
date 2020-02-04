@@ -8,8 +8,8 @@ export default {
   tab_account: 'Account',
   tab_explore: 'Explore',
 
-  btn_transfer: 'Transfer',
-  btn_receive: 'Receive',
+  btn_transfer: '转账',
+  btn_receive: '收款',
   btn_deposit: 'Deposit',
   btn_withdraw: 'Withdraw',
   btn_recycle: 'Recycle',
@@ -19,7 +19,7 @@ export default {
   btn_clear: 'Clear',
   btn_send: 'Send',
   btn_copy: 'Copy',
-  btn_view_more: 'View More',
+  btn_view_more: '查看更多',
 
   label_address: 'Address',
   label_amount: 'Amount',
