@@ -32,13 +32,16 @@
 export default {
   name: 'DashCard',
   data() {
-    return {
-      lang: this.$i18n.locale
-    }
+    return {}
   },
-  watch: {
-    lang(lang) {
-      this.$i18n.locale = lang
+  computed: {
+    lang: {
+      get() {
+        return this.$i18n.locale
+      },
+      set(val) {
+        this.$i18n.locale = val
+      }
     }
   }
 }

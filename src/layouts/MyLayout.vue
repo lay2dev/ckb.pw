@@ -55,9 +55,6 @@ export default {
       new vConsole()
       console.log('vConsole loaded')
     }
-
-    // detecting locale
-    this.$i18n.locale = this.$q.lang.getLocale()
   },
   mounted: function() {
     this.isHome = this.$route.path === '/account'

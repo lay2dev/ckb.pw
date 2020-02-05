@@ -1,10 +1,12 @@
 <template>
   <q-page id="view" class="bg-grey column q-pa-sm no-scroll">
-    <meta-card />
-    <keep-alive>
-      <tx-card />
-    </keep-alive>
-    <dash-card />
+    <q-pull-to-refresh @refresh="refresh" color="primary">
+      <meta-card ref="meta" />
+      <keep-alive>
+        <tx-card ref="tx" />
+      </keep-alive>
+      <dash-card />
+    </q-pull-to-refresh>
   </q-page>
 </template>
 
@@ -39,6 +41,14 @@ export default {
       bottomOffset: 'bottomOffsetGetter'
     })
   },
-  methods: {}
+  methods: {
+    refresh: async function(done) {
+      await Promise.all([
+        this.$refs.meta.loadBalance(),
+        this.$refs.tx.loadTXs()
+      ])
+      done && done()
+    }
+  }
 }
 </script>

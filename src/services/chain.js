@@ -5,6 +5,7 @@ import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import api from './api'
 import txSize from './txSize'
+import ABCWallet from 'abcwallet'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
 const JSBI = ckb.utils.JSBI
@@ -18,17 +19,35 @@ export const init = async ctx => {
   keccak_code_hash = config.keccak_code_hash
   cellDeps = config.cellDeps
 
+  // detecting locale
+  ctx.$i18n.locale = ctx.$q.lang.getLocale()
+  console.log('UA: ', navigator.userAgent)
   imTokenInit(ctx)
+  abcInit(ctx)
 }
 
 function imTokenInit(ctx) {
   if (!window.ethereum.isImToken) return
+  console.log('IN: imToken')
 
-  imToken.callAPI('navigator.configure', {
-    navigationStyle: 'transparent'
-    // navigatorColor: colors.getBrand('dark')
+  try {
+    imToken.callAPI('navigator.configure', {
+      navigationStyle: 'transparent'
+      // navigatorColor: colors.getBrand('dark')
+    })
+    ctx.$store.commit('config/UPDATE', { showBar: true, barHeight: 23 })
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+function abcInit() {
+  if (navigator.userAgent.indexOf('ABCWallet') < 0) return
+  console.log('IN: ABCWallet')
+  console.log(ABCWallet)
+  ABCWallet.webview.setFullscreen({ fullscreen: true }).then(() => {
+    console.log('fullscreen set')
   })
-  ctx.$store.commit('config/UPDATE', { showBar: true, barHeight: 23 })
 }
 
 export const getAccount = async ctx => {
