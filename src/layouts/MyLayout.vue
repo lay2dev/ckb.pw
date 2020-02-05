@@ -19,9 +19,10 @@
         @click="$router.back()"
       />
     </q-header>
-    <q-page-container class="container">
-      <router-view />
+    <q-page-container>
+      <router-view class="app" />
     </q-page-container>
+    <q-footer class="footer" />
   </q-layout>
 </template>
 
@@ -37,16 +38,13 @@ export default {
     return {
       isHome: true,
       isX: false,
-      showHeader: true,
-      showFooter: true,
       tab: 'account'
     }
   },
   computed: {
     ...mapGetters('config', {
       showBar: 'showBarGetter',
-      // showHeader: 'showHeaderGetter',
-      // showFooter: 'showFooterGetter',
+      showHeader: 'showHeaderGetter',
       barHeight: 'barHeightGetter'
     })
   },
@@ -95,8 +93,6 @@ export default {
   watch: {
     '$route.path': function(newVal) {
       this.isHome = newVal === '/account'
-      // this.showFooter = newVal !== '/txs'
-      // console.log('show footer', this.showFooter)
     }
   }
 }
@@ -124,12 +120,13 @@ moment.updateLocale('en', {
 })
 </script>
 <style lang="scss" scoped>
-.header {
-  padding-top: constant(safe-area-inset-top);
-  padding-top: env(safe-area-inset-top);
-}
-// .container {
-//   padding-bottom: constant(safe-area-inset-bottom);
-//   padding-bottom: env(safe-area-inset-bottom);
+// .header {
+//   padding-top: constant(safe-area-inset-top);
+//   padding-top: env(safe-area-inset-top);
 // }
+.footer {
+  background-color: $grey-4;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
 </style>

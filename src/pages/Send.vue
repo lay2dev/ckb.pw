@@ -1,5 +1,5 @@
 <template>
-  <q-page padding>
+  <q-page class="bg-grey-4" padding>
     <outputs-form
       ref="outputs_form"
       :outputs="outputs"

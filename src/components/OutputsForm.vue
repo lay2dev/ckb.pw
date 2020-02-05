@@ -1,13 +1,6 @@
 <template>
   <q-form ref="form">
     <q-list bordered separator>
-      <!-- <q-slide-item v-if="outputs.length === 1">
-        <tx-input
-          :address.sync="outputs[0].address"
-          :amount.sync="outputs[0].amount"
-          :status.sync="outputs[0].status"
-        />
-      </q-slide-item> -->
       <q-slide-item
         v-for="(output, index) in outputs"
         @right="({ reset }) => registerDelete(index, reset)"
@@ -55,10 +48,11 @@
       </q-slide-item>
     </q-list>
     <q-btn
-      outline
-      :ripple="false"
+      push
+      ripple
       class="full-width q-ma-xs"
-      :text-color="outputsReady ? 'primary' : 'grey'"
+      :color="outputsReady ? 'primary' : 'grey-2'"
+      :text-color="outputsReady ? 'white' : 'grey-6'"
       icon="add"
       :disable="!outputsReady"
       @click="addOutput"
@@ -71,14 +65,14 @@
         </q-card-section>
         <q-card-actions align="right">
           <q-btn
-            flat
+            ripple
             :label="$t('btn_cancel')"
             color="error"
             @click="deletion.reset && deletion.reset()"
             v-close-popup
           />
           <q-btn
-            flat
+            ripple
             :label="$t('btn_confirm')"
             color="primary"
             @click="deleteOutput()"

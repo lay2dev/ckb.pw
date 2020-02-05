@@ -32,10 +32,14 @@ function imTokenInit(ctx) {
 
   try {
     imToken.callAPI('navigator.configure', {
-      navigationStyle: 'transparent'
-      // navigatorColor: colors.getBrand('dark')
+      // navigationStyle: 'transparent'
+      navigatorColor: 'black'
     })
-    ctx.$store.commit('config/UPDATE', { showBar: true, barHeight: 23 })
+    ctx.$store.commit('config/UPDATE', {
+      showBar: false,
+      showHeader: false,
+      barHeight: 23
+    })
   } catch (e) {
     console.log(e)
   }

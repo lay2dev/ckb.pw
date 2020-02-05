@@ -47,6 +47,9 @@ export default {
       !address && (address = this.address)
       const _txs = await api.getTxList(getLockHash(address), null, this.limit)
       this.txs = _txs.slice(0, this.limit)
+    },
+    clearTXs() {
+      this.txs = []
     }
   },
   watch: {

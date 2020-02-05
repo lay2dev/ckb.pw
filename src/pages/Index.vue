@@ -1,5 +1,5 @@
 <template>
-  <q-page id="view" class="bg-grey column q-pa-sm no-scroll">
+  <q-page id="view" class="bg-grey-4 column q-pa-sm no-scroll">
     <q-pull-to-refresh @refresh="refresh" color="primary">
       <meta-card ref="meta" />
       <keep-alive>
@@ -43,6 +43,7 @@ export default {
   },
   methods: {
     refresh: async function(done) {
+      this.$refs.tx.clearTXs()
       await Promise.all([
         this.$refs.meta.loadBalance(),
         this.$refs.tx.loadTXs()
