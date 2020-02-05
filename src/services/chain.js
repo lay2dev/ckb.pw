@@ -3,6 +3,7 @@
 import web3utils from 'web3-utils'
 import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
+import * as ckbUtils from '@nervosnetwork/ckb-sdk-utils'
 import api from './api'
 import txSize from './txSize'
 import ABCWallet from 'abcwallet'
@@ -16,8 +17,13 @@ var cellDeps
 
 export const init = async ctx => {
   let config = await api.getConfig()
-  keccak_code_hash = config.keccak_code_hash
+  // keccak_code_hash = config.keccak_code_hash
   cellDeps = config.cellDeps
+  keccak_code_hash =
+    '0xac8a4bc0656aeee68d4414681f4b2611341c4f0edd4c022f2d250ef8bb58682f'
+  console.log(cellDeps)
+  cellDeps[1].outPoint.txHash =
+    '0xcbb9503a8dfdfba7a4ee4661727aef74a5d90c687aee2eaee31652716c931a37'
 
   // detecting locale
   ctx.$i18n.locale = ctx.$q.lang.getLocale()
@@ -118,7 +124,7 @@ export const getLockHash = address => {
   if (address === '-') return null
   return ckb.utils.scriptToHash({
     args: address,
-    hashType: 'data',
+    hashType: 'type',
     codeHash: keccak_code_hash
   })
 }
@@ -184,7 +190,7 @@ export const buildTx = (cells, outputs, fee, address) => {
         // rawTx.outputs[0].lock.args = toAddress
       } else {
         rawTx.outputs[i].lock = {
-          hashType: 'data',
+          hashType: 'type',
           codeHash: keccak_code_hash,
           args: toAddress
         }
@@ -192,7 +198,7 @@ export const buildTx = (cells, outputs, fee, address) => {
     } else {
       // change output
       rawTx.outputs[i].lock = {
-        hashType: 'data',
+        hashType: 'type',
         codeHash: keccak_code_hash,
         args: address
       }
@@ -255,7 +261,8 @@ export const signTx = async (rawTx, address) => {
   // console.log('message is', message)
 
   // Ehereum Personal Sign for keccak256 hash of rawTransaction
-  let signatureHexString = await signWitness(message, address)
+  let signatureHexString = await signWitness(rawTx, message, address)
+  console.log('signatureHexString', signatureHexString)
   let signatureObj = ethUtil.fromRpcSig(signatureHexString)
   signatureObj.v -= 27
   signatureHexString = ethUtil.bufferToHex(
@@ -296,8 +303,32 @@ function mergeTypedArraysUnsafe(a, b) {
   return c
 }
 
-export const signWitness = async (message, from) => {
+export const signWitness = async (tx, message, from) => {
   const signFunc = new Promise((resolve, reject) => {
+    if (web3.currentProvider.isMetaMask) {
+      const typedData = buildTypedData(tx, message)
+      const params = [from, typedData]
+      const method = 'eth_signTypedData_v4'
+
+      console.log('typedData', params)
+
+      web3.currentProvider.sendAsync(
+        {
+          method,
+          params,
+          from
+        },
+        function(err, result) {
+          if (err) {
+            reject(err)
+          }
+          // console.log(result);
+          resolve(result.result)
+        }
+      )
+      return
+    }
+
     if (web3.currentProvider.isImToken) {
       web3.eth.sign(from, message, (err, result) => {
         if (err) {
@@ -332,6 +363,112 @@ export const signWitness = async (message, from) => {
   const witness = await signFunc
 
   return witness
+}
+
+const buildTypedData = (rawTransaction, messageHash) => {
+  const typedData = {
+    domain: {
+      chainId: 1,
+      name: 'ckb.pw',
+      verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+      version: '1'
+    },
+
+    message: {
+      hash:
+        '0x545529d4464064d8394c557afb06f489e7044a63984c6113385431d93dcffa1b',
+      to: [
+        {
+          address: 'ckb1qyqv4yga3pgw2h92hcnur7lepdfzmvg8wj7qwstnwm',
+          amount: '100.00000000CKB'
+        },
+        {
+          address:
+            'ckb1qftyhqxwuxdzp5zk4rctscnrr6stjrmfjdx54v05q8t3ad3493m6mhcekrn0vk575h44ql9ry53z3gzhtc2exudxcyg',
+          amount: '799.99800000CKB'
+        }
+      ]
+    },
+    primaryType: 'CKBTransaction',
+    types: {
+      EIP712Domain: [
+        { name: 'name', type: 'string' },
+        { name: 'version', type: 'string' },
+        { name: 'chainId', type: 'uint256' },
+        { name: 'verifyingContract', type: 'address' }
+      ],
+      CKBTransaction: [
+        { name: 'hash', type: 'bytes32' },
+        { name: 'to', type: 'Output[]' }
+      ],
+      Output: [
+        { name: 'address', type: 'string' },
+        { name: 'amount', type: 'string' }
+      ]
+    }
+  }
+
+  const message =
+    '0x' +
+    ethUtil.hashPersonalMessage(ethUtil.toBuffer(messageHash)).toString('hex')
+  console.log('hash', messageHash)
+  console.log('personal Hash', message)
+
+  typedData.message.hash = message
+  typedData.message.to = []
+
+  rawTransaction.outputs.forEach(output => {
+    let { hashType, codeHash, args } = output.lock
+    let amount = (output.capacity / 100000000.0).toFixed(8) + 'CKB'
+    let address = 'unknown'
+    if (output.lock.keccak_code_hash === '0x00000000000000000000000000000000') {
+      address = 'unknown'
+    } else {
+      if (
+        codeHash ===
+        '0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8'
+      ) {
+        address = formatCKBAddress(
+          ckbUtils.bech32Address(args, {
+            prefix: 'ckt',
+            type: '0x01',
+            codeHashOrCodeHashIndex: '0x00'
+          })
+        )
+      } else {
+        let type = '0x02'
+        if (hashType == 'data') {
+          type = '0x02'
+        } else {
+          type = '0x04'
+        }
+        address = formatCKBAddress(
+          ckbUtils.fullPayloadToAddress({
+            arg: args,
+            prefix: 'ckt',
+            type,
+            codeHash
+          })
+        )
+      }
+    }
+    typedData.message.to.push({ address, amount })
+  })
+
+  // console.log('typed data', JSON.stringify(typedData));
+  // const result = '0x' + sigUtil.TypedDataUtils.sign(typedData).toString('hex');
+  return JSON.stringify(typedData)
+}
+const formatCKBAddress = function(address) {
+  if (address === null || address.length <= 17) {
+    return address
+  }
+
+  const len = address.length
+  const formatedAddress =
+    address.substring(0, 7) + '...' + address.substr(len - 7, 7)
+  console.log(address, formatedAddress)
+  return formatedAddress
 }
 
 export const getFee = function(feeRate, cells, outputs, address) {
