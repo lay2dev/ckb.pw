@@ -8,6 +8,7 @@ import api from './api'
 import txSize from './txSize'
 import ABCWallet from 'abcwallet'
 import { colors } from 'quasar'
+import { formatCKBAddress } from './utils'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
 const JSBI = ckb.utils.JSBI
@@ -119,7 +120,7 @@ export const loadDeps = async () => {
 export const getFullAddress = (
   address,
   prefix = 'ckt',
-  type = '0x02',
+  type = '0x04',
   codeHash = keccak_code_hash
 ) => {
   return ckb.utils.fullPayloadToAddress({
@@ -145,6 +146,38 @@ export const sendTx = async (cells, outputs, fee, address) => {
   await ckb.rpc.sendTransaction(tx)
 }
 
+export const getLockScriptFromAddress = address => {
+  console.log('address is', address)
+  const payload = ckbUtils.parseAddress(address, 'hex').replace('0x', '')
+
+  const type = payload.substring(0, 2)
+
+  let codeHash, hashType, args
+
+  if (type == '01') {
+    if (payload.substring(2, 2) == '00') {
+      codeHash =
+        '0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8'
+    } else {
+      //TODO multisig code here
+      codeHash =
+        '0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8'
+    }
+    hashType = 'type'
+    args = '0x' + payload.substring(4)
+  } else if (type == '02') {
+    hashType = 'data'
+    codeHash = '0x' + payload.substring(2, 66)
+    args = '0x' + payload.substring(66)
+  } else if (type == '04') {
+    hashType = 'type'
+    codeHash = '0x' + payload.substring(2, 66)
+    args = '0x' + payload.substring(66)
+  }
+
+  return { codeHash, hashType, args }
+}
+
 /**
  * build raw Tx for send etch locked cell to ckb locked cell
  * @param {*} cells
@@ -155,6 +188,7 @@ export const sendTx = async (cells, outputs, fee, address) => {
 export const buildTx = (cells, outputs, fee, address) => {
   const fromAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
 
+  console.log('outputs', outputs)
   if (!keccak_code_hash) return null
 
   const receivePairs = outputs.map(o => {
@@ -196,7 +230,9 @@ export const buildTx = (cells, outputs, fee, address) => {
   for (let i in rawTx.outputs) {
     if (i < outputs.length) {
       const { address: toAddress } = outputs[i]
+
       if (toAddress.indexOf('ck') === 0) {
+        rawTx.outputs[i].lock = getLockScriptFromAddress(toAddress)
         // rawTx.outputs[0].lock.args = toAddress
       } else {
         rawTx.outputs[i].lock = {
@@ -468,17 +504,6 @@ const buildTypedData = (rawTransaction, messageHash) => {
   // console.log('typed data', JSON.stringify(typedData));
   // const result = '0x' + sigUtil.TypedDataUtils.sign(typedData).toString('hex');
   return JSON.stringify(typedData)
-}
-const formatCKBAddress = function(address) {
-  if (address === null || address.length <= 17) {
-    return address
-  }
-
-  const len = address.length
-  const formatedAddress =
-    address.substring(0, 7) + '...' + address.substr(len - 7, 7)
-  console.log(address, formatedAddress)
-  return formatedAddress
 }
 
 export const getFee = function(feeRate, cells, outputs, address) {

@@ -221,3 +221,15 @@ function safe(n) {
 export const sleep = async ms => {
   await new Promise(r => setTimeout(r, ms))
 }
+
+export const formatCKBAddress = function(address) {
+  if (address === null || address.length <= 17) {
+    return address
+  }
+
+  const len = address.length
+  const formatedAddress =
+    address.substring(0, 7) + '...' + address.substr(len - 7, 7)
+  console.log(address, formatedAddress)
+  return formatedAddress
+}
