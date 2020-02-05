@@ -19,6 +19,7 @@ export default {
   btn_clear: '清除',
   btn_send: '发送',
   btn_copy: '复制',
+  btn_settings: '设置',
   btn_view_more: '查看更多',
 
   label_address: '地址',
@@ -45,7 +46,7 @@ export default {
   label_recent_tx: '近期收支',
   label_dapps: 'Dapps',
 
-  hint_address: 'ETH 和 CKB 地址均支持',
+  hint_address: '支持 ETH 和 CKB 地址',
   hint_amount: '最小转账金额为',
   hint_available: '当前可用',
 

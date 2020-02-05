@@ -47,7 +47,7 @@
         :scroll-offset="150"
         :offset="[24, 48]"
       >
-        <q-btn fab icon="keyboard_arrow_up" color="primary" />
+        <q-btn fab-mini icon="keyboard_arrow_up" color="primary" />
       </q-page-scroller>
       <q-scroll-observer debounce="500" @scroll="onScroll" />
       <q-ajax-bar

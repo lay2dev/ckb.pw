@@ -26,11 +26,11 @@
         <div class="text-caption">{{ address }}</div>
       </q-card-section>
       <q-card-actions dense align="evenly">
-        <q-btn flat class="full-width col" @click="receiveDialog = true">
+        <q-btn flat ripple class="full-width col" @click="receiveDialog = true">
           {{ $t('btn_receive') }}
         </q-btn>
         <q-separator vertical inset />
-        <q-btn flat class="full-width col" to="send">
+        <q-btn flat ripple class="full-width col" to="send">
           {{ $t('btn_transfer') }}
         </q-btn>
       </q-card-actions>

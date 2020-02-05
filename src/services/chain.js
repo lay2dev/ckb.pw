@@ -5,7 +5,6 @@ import * as ethUtil from 'ethereumjs-util'
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import api from './api'
 import txSize from './txSize'
-import { colors } from 'quasar'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
 const JSBI = ckb.utils.JSBI
@@ -26,8 +25,8 @@ function imTokenInit(ctx) {
   if (!window.ethereum.isImToken) return
 
   imToken.callAPI('navigator.configure', {
-    navigationStyle: 'transparent',
-    navigatorColor: colors.getBrand('dark')
+    navigationStyle: 'transparent'
+    // navigatorColor: colors.getBrand('dark')
   })
   ctx.$store.commit('config/UPDATE', { showBar: true, barHeight: 23 })
 }

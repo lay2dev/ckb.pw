@@ -1,11 +1,12 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header v-if="showHeader" elevated class="bg-dark header">
-      <q-bar v-if="showBar && !isX" dense class="bg-dark text-white" />
+    <q-header v-if="showHeader" elevated class="bg-black text-primary header">
+      <q-bar v-if="showBar && !isX" dense class="bg-black text-white" />
       <q-toolbar>
         <q-toolbar-title>
           <center>
-            <div>{{ $t('title') }}</div>
+            <!-- <small>{{ $t('title') }}</small> -->
+            <small> CKB P-Wallet </small>
           </center>
         </q-toolbar-title>
       </q-toolbar>
@@ -21,18 +22,13 @@
     <q-page-container class="container">
       <router-view />
     </q-page-container>
-    <!-- <q-footer v-if="showFooter" elevated class="bg-dark footer">
-      <q-tabs align="justify" narrow-indicator>
-        <q-route-tab to="/" exact :label="$t('tab_account')" />
-        <q-route-tab to="/explore" exact :label="$t('tab_explore')" />
-      </q-tabs>
-    </q-footer> -->
   </q-layout>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import { init, getAccount, loadDeps } from '../services/chain'
+import { sleep } from '../services/utils'
 import vConsole from 'vconsole'
 export default {
   name: 'MyLayout',
@@ -62,44 +58,42 @@ export default {
 
     // detecting locale
     this.$i18n.locale = this.$q.lang.getLocale()
-
-    window.addEventListener('load', async () => {
+  },
+  mounted: function() {
+    this.isHome = this.$route.path === '/account'
+    this.$nextTick(async () => {
       await init(this)
-      console.log('inited')
-
-      const header = document.querySelector('.header')
-      // const footer = document.querySelector('.footer')
-      let topOffset = parseInt(
-        getComputedStyle(header).paddingTop.split('px')[0]
-      )
-      // let bottomOffset = parseInt(
-      //   getComputedStyle(footer).paddingBottom.split('px')[0]
-      // )
-      let barHeight = this.barHeight
-
-      if (topOffset) {
-        this.isX = true
-        barHeight = 0
-      }
-
-      this.$store.commit('config/UPDATE', {
-        barHeight,
-        topOffset
-        // bottomOffset
-      })
-      // console.log(this.isX, topOffset, bottomOffset, barHeight)
-
       let address = await getAccount(this)
       console.log('loaded address', address)
 
       this.$store.commit('account/SET_PLATFORM', 'eth')
       this.$store.commit('account/SET_ADDRESS', address)
+
       await loadDeps()
     })
-  },
-  mounted: function() {
-    this.isHome =
-      this.$route.path === '/account' || this.$route.path === '/explore'
+
+    sleep(250).then(() => {
+      const header = document.querySelector('.header')
+      let topOffset = parseInt(
+        getComputedStyle(header).paddingTop.split('px')[0]
+      )
+      let barHeight = this.barHeight
+      let showBar = this.showBar
+
+      if (topOffset) {
+        this.isX = true
+        showBar = false
+        barHeight = 0
+      }
+
+      console.log('interface params: ', topOffset, this.isX, showBar)
+
+      this.$store.commit('config/UPDATE', {
+        showBar,
+        barHeight,
+        topOffset
+      })
+    })
   },
   watch: {
     '$route.path': function(newVal) {
