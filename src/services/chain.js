@@ -6,6 +6,7 @@ import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import api from './api'
 import txSize from './txSize'
 import ABCWallet from 'abcwallet'
+import { colors } from 'quasar'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
 const JSBI = ckb.utils.JSBI
@@ -36,6 +37,7 @@ function imTokenInit(ctx) {
       navigatorColor: 'black'
     })
     ctx.$store.commit('config/UPDATE', {
+      provider: 'imToken',
       showBar: false,
       showHeader: false,
       barHeight: 23
@@ -45,12 +47,20 @@ function imTokenInit(ctx) {
   }
 }
 
-function abcInit() {
+function abcInit(ctx) {
   if (navigator.userAgent.indexOf('ABCWallet') < 0) return
   console.log('IN: ABCWallet')
-  console.log(ABCWallet)
-  ABCWallet.webview.setFullscreen({ fullscreen: true }).then(() => {
-    console.log('fullscreen set')
+  ABCWallet.webview.setTitlebar({
+    title: 'CKB P-Wallet',
+    forecolor: colors.getBrand('primary'),
+    bgcolor: 'black'
+  })
+
+  ctx.$store.commit('config/UPDATE', {
+    provider: 'ABCWallet',
+    showBar: false,
+    showHeader: false,
+    showFooter: false
   })
 }
 

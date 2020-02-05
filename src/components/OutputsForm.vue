@@ -88,6 +88,7 @@
 import { mapGetters } from 'vuex'
 import { sleep, verifyAddress } from '../services/utils'
 import BN from 'bn.js'
+import ABCWallet from 'abcwallet'
 export default {
   name: 'OutputsForm',
   props: ['outputs', 'outputsReady'],
@@ -103,28 +104,35 @@ export default {
   computed: {
     ...mapGetters('account', {
       MIN_AMOUNT: 'minAmountGetter'
+    }),
+    ...mapGetters('config', {
+      provider: 'providerGetter'
     })
   },
   methods: {
     async scanQR(index) {
-      if (window.ethereum.isImToken) {
+      let address = ''
+      if (this.provider === 'imToken') {
         // eslint-disable-next-line no-undef
-        let address = await imToken.callPromisifyAPI('native.scanQRCode')
-        console.log('scaned address:', address)
-
-        // check if is eth address
-        let ethAddress = address.match(/0x[a-fA-F0-9]{40}/)
-        ethAddress && (address = ethAddress[0])
-
-        // check if is ckb address
-        let ckbAddress = address.match(/ck[bt]1.{91}/)
-        !ckbAddress && (ckbAddress = address.match(/ck[bt]1.{42}/))
-        ckbAddress && (address = ckbAddress[0])
-
-        console.log('address:', address)
-        let output = { ...this.outputs[index], address }
-        this.$set(this.outputs, index, output)
+        address = await imToken.callPromisifyAPI('native.scanQRCode')
+      } else if (this.provider === 'ABCWallet') {
+        const { text } = await ABCWallet.webview.invokeQRScanner()
+        address = text
       }
+      console.log(`[${this.provider}] scaned address:`, address)
+
+      // check if is eth address
+      let ethAddress = address.match(/0x[a-fA-F0-9]{40}/)
+      ethAddress && (address = ethAddress[0])
+
+      // check if is ckb address
+      let ckbAddress = address.match(/ck[bt]1.{91}/)
+      !ckbAddress && (ckbAddress = address.match(/ck[bt]1.{42}/))
+      ckbAddress && (address = ckbAddress[0])
+
+      console.log('address:', address)
+      let output = { ...this.outputs[index], address }
+      this.$set(this.outputs, index, output)
     },
     registerDelete(index, reset) {
       this.deletion.index = index

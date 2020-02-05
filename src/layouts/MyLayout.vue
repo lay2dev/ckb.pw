@@ -22,14 +22,13 @@
     <q-page-container>
       <router-view class="app" />
     </q-page-container>
-    <q-footer class="footer" />
+    <q-footer v-if="showFooter" class="footer" />
   </q-layout>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import { init, getAccount, loadDeps } from '../services/chain'
-import { sleep } from '../services/utils'
 import vConsole from 'vconsole'
 export default {
   name: 'MyLayout',
@@ -45,6 +44,7 @@ export default {
     ...mapGetters('config', {
       showBar: 'showBarGetter',
       showHeader: 'showHeaderGetter',
+      showFooter: 'showFooterGetter',
       barHeight: 'barHeightGetter'
     })
   },
@@ -65,29 +65,6 @@ export default {
       this.$store.commit('account/SET_ADDRESS', address)
 
       await loadDeps()
-    })
-
-    sleep(250).then(() => {
-      const header = document.querySelector('.header')
-      let topOffset = parseInt(
-        getComputedStyle(header).paddingTop.split('px')[0]
-      )
-      let barHeight = this.barHeight
-      let showBar = this.showBar
-
-      if (topOffset) {
-        this.isX = true
-        showBar = false
-        barHeight = 0
-      }
-
-      console.log('interface params: ', topOffset, this.isX, showBar)
-
-      this.$store.commit('config/UPDATE', {
-        showBar,
-        barHeight,
-        topOffset
-      })
     })
   },
   watch: {

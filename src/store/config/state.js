@@ -1,5 +1,6 @@
 export default function() {
   return {
+    provider: '',
     showBar: false,
     showHeader: true,
     showFooter: true,
