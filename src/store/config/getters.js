@@ -1,3 +1,4 @@
+export const providerGetter = state => state.provider
 export const showBarGetter = state => state.showBar
 export const showHeaderGetter = state => state.showHeader
 export const showFooterGetter = state => state.showFooter
