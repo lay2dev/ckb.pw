@@ -46,7 +46,7 @@
             v-model="output.amount"
             :label="$t('label_amount')"
             suffix="CKB"
-            :hint="`${$t('hint_amount')} is ${MIN_AMOUNT} CKB`"
+            :hint="`${$t('hint_amount')} ${MIN_AMOUNT} CKB`"
             :rules="rules('amount')"
             @input="validate"
             lazy-rules
