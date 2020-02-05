@@ -19,6 +19,7 @@ export default {
   btn_clear: 'Clear',
   btn_send: 'Send',
   btn_copy: 'Copy',
+  btn_settings: '设置',
   btn_view_more: '查看更多',
 
   label_address: 'Address',

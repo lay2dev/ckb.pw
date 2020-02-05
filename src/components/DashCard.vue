@@ -1,6 +1,6 @@
 <template>
   <q-card square class="q-mb-sm items-center">
-    <q-card-section class="row justify-around">
+    <q-card-section class="row justify-around q-pa-xs">
       <div class="row items-center">
         <small> English </small>
         <q-toggle
@@ -16,6 +16,8 @@
       <div class="row">
         <q-btn
           flat
+          ripple
+          no-caps
           icon="apps"
           class="full-width"
           :label="$t('label_dapps')"

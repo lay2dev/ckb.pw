@@ -18,7 +18,6 @@ $eth-gold  : #C99D66;
 
 $ckb-green : #3CC68A;
 
-$meta-card-bg: linear-gradient(to right top, #1D1D1D, $eth-gray);
 
 // $primary   : #027BE3;
 $primary   : darken($ckb-green, 10%);
@@ -32,3 +31,7 @@ $positive  : #21BA45;
 $negative  : #C10015;
 $info      : #31CCEC;
 $warning   : #F2C037;
+
+
+// $meta-card-bg: linear-gradient(to right top, #1D1D1D, $eth-gray);
+$meta-card-bg: linear-gradient(to right top, darken($ckb-green, 30%), $ckb-green);

@@ -24,7 +24,7 @@ import TxItem from './TxItem'
 import { mapGetters } from 'vuex'
 import api from '../services/api'
 import { getLockHash } from '../services/chain'
-const LIMIT = 3
+const LIMIT = 5
 export default {
   name: 'TxCard',
   components: { TxItem },
