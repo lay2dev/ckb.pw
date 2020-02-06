@@ -45,6 +45,7 @@ export default {
   label_fast: 'Fast',
   label_recent_tx: 'Recent Transactions',
   label_dapps: 'Dapps',
+  label_no_record: 'No Record',
 
   hint_address: 'ETH and CKB addresses are supported',
   hint_amount: 'Min transfer amount is ',

@@ -3,19 +3,31 @@
     <q-pull-to-refresh @refresh="load" color="primary">
       <q-tab-panels v-model="type" animated swipeable infinite>
         <q-tab-panel name="all">
-          <q-list bordered separator>
+          <q-list v-if="txs.length" bordered separator>
             <tx-item v-for="tx in txs" :tx="tx" :key="tx.hash" />
           </q-list>
+          <div v-else class="text-grey-4 column items-center q-ma-sm">
+            <q-icon size="3em" name="las la-inbox" />
+            <span> {{ $t('label_no_record') }} </span>
+          </div>
         </q-tab-panel>
         <q-tab-panel name="in">
-          <q-list bordered separator>
+          <q-list v-if="txs.length" bordered separator>
             <tx-item v-for="tx in txs" :tx="tx" :key="tx.hash" />
           </q-list>
+          <div v-else class="text-grey-4 column items-center q-ma-sm">
+            <q-icon size="3em" name="las la-inbox" />
+            <span> {{ $t('label_no_record') }} </span>
+          </div>
         </q-tab-panel>
         <q-tab-panel name="out">
-          <q-list bordered separator>
+          <q-list v-if="txs.length" bordered separator>
             <tx-item v-for="tx in txs" :tx="tx" :key="tx.hash" />
           </q-list>
+          <div v-else class="text-grey-4 column items-center q-ma-sm">
+            <q-icon size="3em" name="las la-inbox" />
+            <span> {{ $t('label_no_record') }} </span>
+          </div>
         </q-tab-panel>
       </q-tab-panels>
       <q-page-sticky position="top" class="bg-white" expand>

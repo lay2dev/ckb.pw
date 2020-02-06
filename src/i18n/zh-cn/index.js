@@ -45,6 +45,7 @@ export default {
   label_fast: '快',
   label_recent_tx: '近期收支',
   label_dapps: 'Dapps',
+  label_no_record: '没有记录',
 
   hint_address: '支持 ETH 和 CKB 地址',
   hint_amount: '最小转账金额为',

@@ -7,7 +7,6 @@ import * as ckbUtils from '@nervosnetwork/ckb-sdk-utils'
 import api from './api'
 import txSize from './txSize'
 import ABCWallet from 'abcwallet'
-import { colors } from 'quasar'
 import { formatCKBAddress } from './utils'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
@@ -59,8 +58,8 @@ function abcInit(ctx) {
   console.log('IN: ABCWallet')
   ABCWallet.webview.setTitlebar({
     title: 'CKB P-Wallet',
-    forecolor: colors.getBrand('primary'),
-    bgcolor: 'black'
+    forecolor: '#ffffff',
+    bgcolor: '#000000'
   })
 
   ctx.$store.commit('config/UPDATE', {

@@ -54,7 +54,7 @@
       :color="outputsReady ? 'primary' : 'grey-2'"
       :text-color="outputsReady ? 'white' : 'grey-6'"
       icon="add"
-      :disable="!outputsReady"
+      :disable="!outputsReady || loadingUnSpent"
       @click="addOutput"
     />
     <q-dialog v-model="confirmDelete" persistent>
@@ -67,7 +67,7 @@
           <q-btn
             ripple
             :label="$t('btn_cancel')"
-            color="error"
+            color="negative"
             @click="deletion.reset && deletion.reset()"
             v-close-popup
           />
@@ -104,6 +104,9 @@ export default {
   computed: {
     ...mapGetters('account', {
       MIN_AMOUNT: 'minAmountGetter'
+    }),
+    ...mapGetters('cell', {
+      loadingUnSpent: 'loadingUnSpentGetter'
     }),
     ...mapGetters('config', {
       provider: 'providerGetter'
