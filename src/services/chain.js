@@ -59,8 +59,8 @@ function imTokenInit(ctx) {
 }
 
 function abcInit(ctx) {
-  provider = 'ABCWallet'
   if (navigator.userAgent.indexOf('ABCWallet') < 0) return
+  provider = 'ABCWallet'
   console.log('IN: ABCWallet')
   ABCWallet.webview.setTitlebar({
     title: 'CKB P-Wallet',
