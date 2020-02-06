@@ -23,13 +23,16 @@ export const init = async ctx => {
   cellDeps = config.cellDeps
   keccak_code_hash =
     '0xac8a4bc0656aeee68d4414681f4b2611341c4f0edd4c022f2d250ef8bb58682f'
-  console.log(cellDeps)
   cellDeps[1].outPoint.txHash =
     '0xcbb9503a8dfdfba7a4ee4661727aef74a5d90c687aee2eaee31652716c931a37'
 
   // detecting locale
   ctx.$i18n.locale = ctx.$q.lang.getLocale()
+
   console.log('UA: ', navigator.userAgent)
+
+  await getAccount(ctx)
+
   imTokenInit(ctx)
   abcInit(ctx)
 }
@@ -74,45 +77,46 @@ function abcInit(ctx) {
 }
 
 export const getAccount = async ctx => {
+  console.log('get account')
   const getAccountPromise = new Promise((resolve, reject) => {
     window.web3.eth.getAccounts((err, result) => {
       err && reject(err)
       resolve(result)
     })
   })
+
   return new Promise(async (resolve, reject) => {
     let account = '0x'
     if (typeof window.ethereum !== 'undefined') {
       try {
         ethereum.autoRefreshOnNetworkChange = false
+        console.log('try 1')
         await window.ethereum.enable()
         const accounts = await getAccountPromise
         account = accounts[0]
+        console.log('account', account)
+        ctx.$store.commit('account/SET_ADDRESS', account)
+        ctx.$store.commit('account/SET_PLATFORM', 'eth')
+
+        // watch address change
         ethereum.on('accountsChanged', function(accounts) {
           ctx.$store.commit('account/SET_ADDRESS', accounts[0])
         })
+
         resolve(account)
       } catch (err) {
         reject(err)
       }
     } else if (window.web3) {
+      console.log('try 2')
       const accounts = await getAccountPromise
       account = accounts[0]
+      console.log('account', account)
+      ctx.$store.commit('account/SET_ADDRESS', account)
+      ctx.$store.commit('account/SET_PLATFORM', 'eth')
       resolve(account)
     }
   })
-}
-
-export const getEthAddress = async context => {
-  if (typeof window.ethereum !== 'undefined') {
-    ethereum.autoRefreshOnNetworkChange = false
-    ethereum.on('accountsChanged', function(accounts) {
-      context.$store.commit('account/SET_ADDRESS', accounts[0])
-    })
-    const accounts = await window.ethereum.enable()
-    return accounts[0]
-  }
-  return null
 }
 
 export const loadDeps = async () => {

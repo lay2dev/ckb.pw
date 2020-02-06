@@ -28,7 +28,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { init, getAccount, loadDeps } from '../services/chain'
+import { init, loadDeps } from '../services/chain'
 import vConsole from 'vconsole'
 export default {
   name: 'MyLayout',
@@ -58,12 +58,6 @@ export default {
     this.isHome = this.$route.path === '/account'
     this.$nextTick(async () => {
       await init(this)
-      let address = await getAccount(this)
-      console.log('loaded address', address)
-
-      this.$store.commit('account/SET_PLATFORM', 'eth')
-      this.$store.commit('account/SET_ADDRESS', address)
-
       await loadDeps()
     })
   },
