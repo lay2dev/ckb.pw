@@ -13,6 +13,7 @@ export const ckb = new CKBCore('https://aggron.ckb.dev')
 const JSBI = ckb.utils.JSBI
 export const MIN_FEE_RATE = 1000
 
+var provider = ''
 var keccak_code_hash
 var cellDeps
 
@@ -35,6 +36,7 @@ export const init = async ctx => {
 
 function imTokenInit(ctx) {
   if (!window.ethereum.isImToken) return
+  provider = 'imToken'
   console.log('IN: imToken')
 
   try {
@@ -43,7 +45,7 @@ function imTokenInit(ctx) {
       navigatorColor: 'black'
     })
     ctx.$store.commit('config/UPDATE', {
-      provider: 'imToken',
+      provider,
       showBar: false,
       showHeader: false,
       barHeight: 23
@@ -54,6 +56,7 @@ function imTokenInit(ctx) {
 }
 
 function abcInit(ctx) {
+  provider = 'ABCWallet'
   if (navigator.userAgent.indexOf('ABCWallet') < 0) return
   console.log('IN: ABCWallet')
   ABCWallet.webview.setTitlebar({
@@ -63,7 +66,7 @@ function abcInit(ctx) {
   })
 
   ctx.$store.commit('config/UPDATE', {
-    provider: 'ABCWallet',
+    provider,
     showBar: false,
     showHeader: false,
     showFooter: false
@@ -350,7 +353,7 @@ function mergeTypedArraysUnsafe(a, b) {
 
 export const signWitness = async (tx, message, from) => {
   const signFunc = new Promise((resolve, reject) => {
-    if (web3.currentProvider.isMetaMask) {
+    if (web3.currentProvider.isMetaMask && provider !== 'ABCWallet') {
       const typedData = buildTypedData(tx, message)
       const params = [from, typedData]
       const method = 'eth_signTypedData_v4'
