@@ -6,7 +6,8 @@ export default function() {
     loadingUnSpent: false,
     unSpent: {
       capacity: '',
-      cells: []
+      cells: [],
+      lastId: 0
     }
   }
 }

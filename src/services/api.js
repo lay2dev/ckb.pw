@@ -37,8 +37,12 @@ export const get = async (url, params) => {
 }
 
 export default {
-  getUnspentCells: async (lockHash, capacity) => {
-    const { data } = await get(API.GetUnspentCells, { lockHash, capacity })
+  getUnspentCells: async (lockHash, capacity, lastId) => {
+    const { data } = await get(API.GetUnspentCells, {
+      lockHash,
+      capacity,
+      lastId
+    })
     return data
   },
   getTxList: async (lockHash, lastHash, size, type) => {

@@ -180,7 +180,9 @@ export default {
           this.fee,
           this.address
         )
-        this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS')
+        this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
+          lastId: this.unSpent.lastId
+        })
         this.sent = true
       } catch (e) {
         this.$q.notify({
@@ -202,7 +204,8 @@ export default {
       if (cmpAmount(needed, this.unSpent.capacity) === 'gt') {
         this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
           address: this.address,
-          capacity: needed
+          capacity: needed,
+          lastId: this.unSpent.lastId
         })
       }
     }
