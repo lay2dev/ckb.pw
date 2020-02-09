@@ -91,8 +91,8 @@ export const getAccount = async ctx => {
       try {
         ethereum.autoRefreshOnNetworkChange = false
         console.log('try 1')
-        await window.ethereum.enable()
-        const accounts = await getAccountPromise
+        const accounts = await window.ethereum.enable()
+        // const accounts = await getAccountPromise
         account = accounts[0]
         console.log('account', account)
         ctx.$store.commit('account/SET_ADDRESS', account)
