@@ -53,7 +53,7 @@
           color="primary"
           :label="$t('btn_send')"
           :loading="sending || loadingUnSpent"
-          :disable="!outputsReady || loadingUnSpent || sending"
+          :disable="!outputsReady || broke || loadingUnSpent || sending"
           @click="send"
         >
           <template v-slot:loading>
@@ -108,6 +108,7 @@ export default {
     return {
       outputs: [],
       outputsReady: false,
+      broke: false,
       sending: false,
       sent: false,
       showFeeRate: false
@@ -196,10 +197,10 @@ export default {
     }
   },
   watch: {
-    async address() {
+    address() {
       this.$store.dispatch('account/LOAD_BALANCE')
     },
-    async sendAmount(newVal) {
+    sendAmount(newVal) {
       if (!this.outputsReady) return
       const needed = fromCKB(newVal)
       if (cmpAmount(needed, this.unSpent.capacity) === 'gt') {
@@ -208,6 +209,19 @@ export default {
           capacity: needed,
           lastId: this.unSpent.lastId
         })
+      }
+    },
+    remaining(remaining) {
+      if (cmpAmount(remaining, 0) === 'lt') {
+        this.broke = true
+        this.$q.notify({
+          message: this.$t('msg_broke'),
+          color: 'negative',
+          position: 'center',
+          timeout: 1500
+        })
+      } else {
+        this.broke = false
       }
     }
   }
