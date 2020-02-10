@@ -24,7 +24,7 @@ export const init = async ctx => {
   keccak_code_hash =
     '0xac8a4bc0656aeee68d4414681f4b2611341c4f0edd4c022f2d250ef8bb58682f'
   cellDeps[1].outPoint.txHash =
-    '0xcbb9503a8dfdfba7a4ee4661727aef74a5d90c687aee2eaee31652716c931a37'
+    '0xff1bb8baaa5fca57b82901f993b35d1c5f697c855133fad90ffe482c3e342612'
 
   // detecting locale
   ctx.$i18n.locale = ctx.$q.lang.getLocale()
