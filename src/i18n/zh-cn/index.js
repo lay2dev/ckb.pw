@@ -56,6 +56,7 @@ export default {
   msg_field_required: '必填',
   msg_invalid_address: '无效地址',
   msg_min_fee_rate: `最低费率为 ${MIN_FEE_RATE} Shannons / KB`,
+  msg_only_integer: `金额必须为整数`,
   msg_confirm_delete: '确认删除 ?',
   msg_copy_success: '已复制 !'
 }

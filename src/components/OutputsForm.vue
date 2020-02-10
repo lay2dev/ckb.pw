@@ -1,5 +1,5 @@
 <template>
-  <q-form ref="form">
+  <q-form ref="form" no-error-focus>
     <q-list bordered separator>
       <q-slide-item
         v-for="(output, index) in outputs"
@@ -165,16 +165,19 @@ export default {
       const rule_min_amount = val =>
         new BN(val).gte(new BN(this.MIN_AMOUNT)) ||
         this.$t('label_min_amount') + ': ' + this.MIN_AMOUNT + ' CKB'
+      const rule_is_integer = val =>
+        !/[\D]/.test(val) || this.$t('msg_only_integer')
 
       switch (which) {
         case 'address':
           return [rule_not_empty, rule_is_valid_address]
         case 'amount':
-          return [rule_not_empty, rule_min_amount]
+          return [rule_not_empty, rule_min_amount, rule_is_integer]
       }
       return []
     },
     async validate() {
+      console.log('amount', this.outputs[0].amount)
       await sleep(100)
       let res = await this.$refs.form.validate()
       this.$emit('update:outputsReady', res)

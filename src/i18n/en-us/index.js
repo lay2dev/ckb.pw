@@ -56,6 +56,7 @@ export default {
   msg_field_required: 'Field is required',
   msg_invalid_address: 'Invalid Address',
   msg_min_fee_rate: `Min fee rate is ${MIN_FEE_RATE} Shannons / KB`,
+  msg_only_integer: `Amount must be integer`,
   msg_confirm_delete: 'Proceed Deleting ?',
   msg_copy_success: 'Copied to Clipboard!'
 }
