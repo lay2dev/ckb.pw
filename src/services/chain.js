@@ -148,7 +148,7 @@ export const getLockHash = address => {
 
 export const sendTx = async (cells, outputs, fee, address) => {
   const rawTx = buildTx(cells, outputs, fee, address)
-  const tx = await signTx(rawTx, address)
+  const tx = await signTx(cells, rawTx, address)
   await ckb.rpc.sendTransaction(tx)
 }
 
@@ -272,7 +272,7 @@ export const buildTx = (cells, outputs, fee, address) => {
  * @param {*} ckb
  * @param {*} rawTx
  */
-export const signTx = async (rawTx, address) => {
+export const signTx = async (unspentCells, rawTx, address) => {
   const { hexToBytes, serializeWitnessArgs, toHexInLittleEndian } = ckb.utils
 
   const txHash = ckb.utils.rawTransactionToHash(rawTx)
@@ -313,7 +313,12 @@ export const signTx = async (rawTx, address) => {
   // console.log('message is', message)
 
   // Ehereum Personal Sign for keccak256 hash of rawTransaction
-  let signatureHexString = await signWitness(rawTx, message, address)
+  let signatureHexString = await signWitness(
+    unspentCells,
+    rawTx,
+    message,
+    address
+  )
   console.log('signatureHexString', signatureHexString)
   let signatureObj = ethUtil.fromRpcSig(signatureHexString)
   signatureObj.v -= 27
@@ -355,10 +360,10 @@ function mergeTypedArraysUnsafe(a, b) {
   return c
 }
 
-export const signWitness = async (tx, message, from) => {
+export const signWitness = async (unspentCells, tx, message, from) => {
   const signFunc = new Promise((resolve, reject) => {
     if (web3.currentProvider.isMetaMask && provider !== 'ABCWallet') {
-      const typedData = buildTypedData(tx, message)
+      const typedData = buildTypedData(unspentCells, tx, message)
       const params = [from, typedData]
       const method = 'eth_signTypedData_v4'
 
@@ -417,7 +422,7 @@ export const signWitness = async (tx, message, from) => {
   return witness
 }
 
-const buildTypedData = (rawTransaction, messageHash) => {
+const buildTypedData = (unspentCells, rawTransaction, messageHash) => {
   const typedData = {
     domain: {
       chainId: 1,
@@ -429,6 +434,8 @@ const buildTypedData = (rawTransaction, messageHash) => {
     message: {
       hash:
         '0x545529d4464064d8394c557afb06f489e7044a63984c6113385431d93dcffa1b',
+      fee: '0.00100000CKB',
+      'input-sum': '100.00000000CKB',
       to: [
         {
           address: 'ckb1qyqv4yga3pgw2h92hcnur7lepdfzmvg8wj7qwstnwm',
@@ -451,6 +458,8 @@ const buildTypedData = (rawTransaction, messageHash) => {
       ],
       CKBTransaction: [
         { name: 'hash', type: 'bytes32' },
+        { name: 'fee', type: 'string' },
+        { name: 'input-sum', type: 'string' },
         { name: 'to', type: 'Output[]' }
       ],
       Output: [
@@ -469,9 +478,27 @@ const buildTypedData = (rawTransaction, messageHash) => {
   typedData.message.hash = message
   typedData.message.to = []
 
+  let input_capacities = 0
+  let output_capacities = 0
+
+  rawTransaction.inputs.forEach(input => {
+    const {
+      previousOutput: { txHash, index }
+    } = input
+    let cell = unspentCells.filter(
+      t => t.outPoint.txHash == txHash && t.outPoint.index == index
+    )[0]
+    const { capacity } = cell
+    input_capacities += Number(capacity)
+  })
+
+
   rawTransaction.outputs.forEach(output => {
     let { hashType, codeHash, args } = output.lock
-    let amount = (output.capacity / 100000000.0).toFixed(8) + 'CKB'
+    const capacity = web3utils.hexToNumber(output.capacity)
+    output_capacities += capacity
+    let amount = (capacity / 100000000.0).toFixed(8) + 'CKB'
+
     let address = 'unknown'
     if (output.lock.keccak_code_hash === '0x00000000000000000000000000000000') {
       address = 'unknown'
@@ -506,6 +533,13 @@ const buildTypedData = (rawTransaction, messageHash) => {
     }
     typedData.message.to.push({ address, amount })
   })
+
+  console.log('input_capacities/output_capacities', input_capacities, output_capacities)
+
+  typedData.message['input-sum'] =
+    (input_capacities / 100000000.0).toFixed(8) + 'CKB'
+  typedData.message.fee =
+    ((input_capacities - output_capacities) / 100000000.0).toFixed(8) + 'CKB'
 
   // console.log('typed data', JSON.stringify(typedData));
   // const result = '0x' + sigUtil.TypedDataUtils.sign(typedData).toString('hex');
