@@ -5,7 +5,7 @@
 <script>
 export default {
   // name: 'ComponentName',
-  data () {
+  data() {
     return {}
   }
 }

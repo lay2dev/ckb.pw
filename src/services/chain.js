@@ -690,3 +690,19 @@ export const buildWithdrawDAOTx = async (
 
   return tx
 }
+
+const absoluteEpochSince = ({ length, index, number }) => {
+  const { JSBI } = ckb.utils
+  const epochSince = JSBI.add(
+    JSBI.add(
+      JSBI.add(
+        JSBI.leftShift(JSBI.BigInt(0x20), JSBI.BigInt(56)),
+        JSBI.leftShift(JSBI.BigInt(length), JSBI.BigInt(40))
+      ),
+      JSBI.leftShift(JSBI.BigInt(index), JSBI.BigInt(24))
+    ),
+    JSBI.BigInt(number)
+  )
+
+  return `0x${epochSince.toString(16)}`
+}
