@@ -524,3 +524,169 @@ export const getFee = function(feeRate, cells, outputs, address) {
 
   return fee.toString()
 }
+
+export const buildDepositDAOTx = async (
+  unspentCell,
+  fromAddress,
+  capacity,
+  fee
+) => {
+  const depositTx = ckb.generateRawTransaction({
+    fromAddress,
+    toAddress: fromAddress,
+    capacity: BigInt(capacity),
+    fee: BigInt(fee),
+    safeMode: true,
+    cells: unspentCell,
+    deps: ckb.config.secp256k1Dep
+  })
+
+  depositTx.outputs[0].type = {
+    codeHash: ckb.config.daoDep.typeHash,
+    args: '0x',
+    hashType: ckb.config.daoDep.hashType
+  }
+  depositTx.outputsData[0] = '0x0000000000000000'
+
+  depositTx.cellDeps.push({
+    outPoint: ckb.config.daoDep.outPoint,
+    depType: 'code'
+  })
+  depositTx.witnesses.unshift({ lock: '', inputType: '', outputType: '' })
+
+  return depositTx
+}
+
+export const buildStarWithdrawingDAOTx = async (
+  unspentCell,
+  outPoint,
+  outputCell,
+  fee,
+  depositBlockHeader,
+  fromAddress
+) => {
+  const encodedBlockNumber = ckb.utils.toHexInLittleEndian(
+    depositBlockHeader.number,
+    8
+  )
+
+  const rawTx = ckb.generateRawTransaction({
+    fromAddress,
+    toAddress: fromAddress,
+    capacity: '0x0',
+    fee: BigInt(fee),
+    safeMode: true,
+    deps: ckb.config.secp256k1Dep,
+    capacityThreshold: '0x0',
+    cells: unspentCell
+  })
+
+  rawTx.outputs.splice(0, 1)
+  rawTx.outputsData.splice(0, 1)
+
+  rawTx.inputs.unshift({ previousOutput: outPoint, since: '0x0' })
+  rawTx.outputs.unshift(outputCell)
+  rawTx.cellDeps.push({
+    outPoint: ckb.config.daoDep.outPoint,
+    depType: 'code'
+  })
+  rawTx.headerDeps.push(depositBlockHeader.hash)
+  rawTx.outputsData.unshift(encodedBlockNumber)
+  rawTx.witnesses.unshift({
+    lock: '',
+    inputType: '',
+    outputType: ''
+  })
+
+  return rawTx
+}
+
+export const buildWithdrawDAOTx = async (
+  depositBlockHeader,
+  withdrawBlockHeader,
+  withdrawOutPoint,
+  fee,
+  toLock,
+  outputCapacity
+) => {
+  const { JSBI } = ckb.utils
+
+  const DAO_LOCK_PERIOD_EPOCHS = 180
+
+  const depositEpoch = depositBlockHeader.epoch
+  const withdrawEpoch = withdrawBlockHeader.epoch
+
+  const withdrawFraction = JSBI.multiply(
+    JSBI.BigInt(withdrawEpoch.index),
+    JSBI.BigInt(depositEpoch.length)
+  )
+  const depositFraction = JSBI.multiply(
+    JSBI.BigInt(depositEpoch.index),
+    JSBI.BigInt(withdrawEpoch.length)
+  )
+  let depositedEpochs = JSBI.subtract(
+    JSBI.BigInt(withdrawEpoch.number),
+    JSBI.BigInt(depositEpoch.number)
+  )
+  if (JSBI.greaterThan(withdrawFraction, depositFraction)) {
+    depositedEpochs = JSBI.add(depositedEpochs, JSBI.BigInt(1))
+  }
+  const lockEpochs = JSBI.multiply(
+    JSBI.divide(
+      JSBI.add(depositedEpochs, JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS - 1)),
+      JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS)
+    ),
+    JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS)
+  )
+  const minimalSince = absoluteEpochSince({
+    length: `0x${JSBI.BigInt(depositEpoch.length).toString(16)}`,
+    index: `0x${JSBI.BigInt(depositEpoch.index).toString(16)}`,
+    number: `0x${JSBI.add(
+      JSBI.BigInt(depositEpoch.number),
+      lockEpochs
+    ).toString(16)}`
+  })
+
+  const targetCapacity = JSBI.BigInt(outputCapacity)
+  const targetFee = JSBI.BigInt(`${fee}`)
+  if (JSBI.lessThan(targetCapacity, targetFee)) {
+    throw new Error(
+      `The fee(${targetFee}) is too big that withdraw(${targetCapacity}) is not enough`
+    )
+  }
+
+  const outputs = [
+    {
+      capacity: `0x${JSBI.subtract(targetCapacity, targetFee).toString(16)}`,
+      lock: toLock
+    }
+  ]
+
+  const outputsData = ['0x']
+
+  const tx = {
+    version: '0x0',
+    cellDeps: [
+      { outPoint: ckb.config.secp256k1Dep.outPoint, depType: 'depGroup' },
+      { outPoint: ckb.config.daoDep.outPoint, depType: 'code' }
+    ],
+    headerDeps: [depositBlockHeader.hash, withdrawBlockHeader.hash],
+    inputs: [
+      {
+        previousOutput: withdrawOutPoint,
+        since: minimalSince
+      }
+    ],
+    outputs,
+    outputsData,
+    witnesses: [
+      {
+        lock: '',
+        inputType: '0x0000000000000000',
+        outputType: ''
+      }
+    ]
+  }
+
+  return tx
+}
