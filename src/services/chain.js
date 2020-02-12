@@ -656,11 +656,11 @@ export const DAO = {
       txHash: hash,
       index: '0x' + Number(idx).toString(16)
     }
-    const outputCell = {
+    let outputCell = {
       capacity: '0x' + JSBI.BigInt(size).toString(16),
       lock: getLockScriptFromEthAddress(address),
-      type: getDaoTypeScript(),
-      outPoint: outPoint
+      type: getDaoTypeScript()
+      // outPoint: outPoint
     }
 
     let rawTx = this.buildWithdraw1Tx(
@@ -682,6 +682,11 @@ export const DAO = {
       address
     )
     console.log('raw tx', rawTx)
+
+    outputCell = {
+      ...outputCell,
+      outPoint: outPoint
+    }
     const tx = await signTx([changeCell, outputCell], rawTx, address)
     const txHash = await ckb.rpc.sendTransaction(tx)
     console.log('DAO Withdraw 1 TX: ', txHash)
@@ -712,7 +717,7 @@ export const DAO = {
       safeMode: true,
       deps: ckb.config.secp256k1Dep,
       capacityThreshold: '0x0',
-      cells: changeCell
+      cells: [changeCell]
     })
 
     rawTx.outputs = replaceOutputsLock(
@@ -726,10 +731,15 @@ export const DAO = {
 
     rawTx.inputs.unshift({ previousOutput: outPoint, since: '0x0' })
     rawTx.outputs.unshift(outputCell)
-    rawTx.cellDeps.push({
-      outPoint: ckb.config.daoDep.outPoint,
-      depType: 'code'
-    })
+
+    rawTx.cellDeps = [
+      ...cellDeps,
+      {
+        depType: 'code',
+        outPoint: ckb.config.daoDep.outPoint
+      }
+    ]
+
     rawTx.headerDeps.push(depositBlockHeader.hash)
     rawTx.outputsData.unshift(encodedBlockNumber)
     rawTx.witnesses.unshift({
@@ -808,7 +818,7 @@ export const DAO = {
     const tx = {
       version: '0x0',
       cellDeps: [
-        { outPoint: ckb.config.secp256k1Dep.outPoint, depType: 'depGroup' },
+        ...cellDeps,
         { outPoint: ckb.config.daoDep.outPoint, depType: 'code' }
       ],
       headerDeps: [depositBlockHeader.hash, withdrawBlockHeader.hash],
