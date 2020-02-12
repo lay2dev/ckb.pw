@@ -233,29 +233,7 @@ export const buildTx = (cells, outputs, fee, address) => {
     outputType: ''
   }
 
-  for (let i in rawTx.outputs) {
-    if (i < outputs.length) {
-      const { address: toAddress } = outputs[i]
-
-      if (toAddress.indexOf('ck') === 0) {
-        rawTx.outputs[i].lock = getLockScriptFromAddress(toAddress)
-        // rawTx.outputs[0].lock.args = toAddress
-      } else {
-        rawTx.outputs[i].lock = {
-          hashType: 'type',
-          codeHash: keccak_code_hash,
-          args: toAddress
-        }
-      }
-    } else {
-      // change output
-      rawTx.outputs[i].lock = {
-        hashType: 'type',
-        codeHash: keccak_code_hash,
-        args: address
-      }
-    }
-  }
+  rawTx.outputs = replaceOutputsLock(rawTx, outputs, address)
 
   // console.log('rawTx outputs', rawTx.outputs)
 
@@ -265,6 +243,35 @@ export const buildTx = (cells, outputs, fee, address) => {
   rawTx.cellDeps = cellDeps
   // console.log(rawTx.cellDeps)
   return rawTx
+}
+
+const replaceOutputsLock = (tx, toAddressList, ethAddress) => {
+  const txOutputs = tx.outputs
+
+  for (let i in txOutputs) {
+    if (i < toAddressList.length) {
+      const { address: toAddress } = toAddressList[i]
+
+      if (toAddress.indexOf('ck') === 0) {
+        txOutputs[i].lock = getLockScriptFromAddress(toAddress)
+      } else {
+        txOutputs[i].lock = {
+          hashType: 'type',
+          codeHash: keccak_code_hash,
+          args: toAddress
+        }
+      }
+    } else {
+      // change output
+      txOutputs[i].lock = {
+        hashType: 'type',
+        codeHash: keccak_code_hash,
+        args: ethAddress
+      }
+    }
+  }
+
+  return txOutputs
 }
 
 /**
@@ -492,7 +499,6 @@ const buildTypedData = (unspentCells, rawTransaction, messageHash) => {
     input_capacities += Number(capacity)
   })
 
-
   rawTransaction.outputs.forEach(output => {
     let { hashType, codeHash, args } = output.lock
     const capacity = web3utils.hexToNumber(output.capacity)
@@ -534,7 +540,11 @@ const buildTypedData = (unspentCells, rawTransaction, messageHash) => {
     typedData.message.to.push({ address, amount })
   })
 
-  console.log('input_capacities/output_capacities', input_capacities, output_capacities)
+  console.log(
+    'input_capacities/output_capacities',
+    input_capacities,
+    output_capacities
+  )
 
   typedData.message['input-sum'] =
     (input_capacities / 100000000.0).toFixed(8) + 'CKB'
@@ -565,9 +575,11 @@ export const buildDepositDAOTx = async (
   capacity,
   fee
 ) => {
+  const tempAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
+
   const depositTx = ckb.generateRawTransaction({
-    fromAddress,
-    toAddress: fromAddress,
+    fromAddress: tempAddress,
+    toAddress: tempAddress,
     capacity: BigInt(capacity),
     fee: BigInt(fee),
     safeMode: true,
@@ -587,6 +599,11 @@ export const buildDepositDAOTx = async (
     depType: 'code'
   })
   depositTx.witnesses.unshift({ lock: '', inputType: '', outputType: '' })
+  depositTx.outputs = replaceOutputsLock(
+    depositTx,
+    [{ address: fromAddress }],
+    fromAddress
+  )
 
   return depositTx
 }
@@ -599,14 +616,16 @@ export const buildStarWithdrawingDAOTx = async (
   depositBlockHeader,
   fromAddress
 ) => {
+  const tempAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
+
   const encodedBlockNumber = ckb.utils.toHexInLittleEndian(
     depositBlockHeader.number,
     8
   )
 
   const rawTx = ckb.generateRawTransaction({
-    fromAddress,
-    toAddress: fromAddress,
+    fromAddress: tempAddress,
+    toAddress: tempAddress,
     capacity: '0x0',
     fee: BigInt(fee),
     safeMode: true,
@@ -614,6 +633,11 @@ export const buildStarWithdrawingDAOTx = async (
     capacityThreshold: '0x0',
     cells: unspentCell
   })
+  rawTx.outputs = replaceOutputsLock(
+    rawTx,
+    [{ address: fromAddress }],
+    fromAddress
+  )
 
   rawTx.outputs.splice(0, 1)
   rawTx.outputsData.splice(0, 1)
