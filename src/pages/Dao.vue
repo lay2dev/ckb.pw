@@ -1,23 +1,5 @@
 <template>
-  <q-page class="bg-lime-1 column q-gutter-sm" padding>
-    <q-card square>
-      <q-card-section>
-        <div>
-          <span class="text-dao-locked q-mr-sm">{{ locked }} CKB</span>
-          <span class="text-blue-grey">{{ $t('label_in_dao') }}</span>
-        </div>
-        <div class="row justify-between">
-          <div>
-            <span class="text-blue-grey">{{ $t('label_apc') }}: </span>
-            <span class="text-dao-apc">{{ apc }}</span>
-          </div>
-          <div>
-            <span class="text-blue-grey">{{ $t('label_revenue') }}: </span>
-            <span class="text-dao-revenue">{{ revenue }} CKB</span>
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
+  <q-page class="bg-lime-1 q-gutter-sm" padding>
     <dao-input :amount.sync="amount" :ready.sync="ready" />
     <q-card>
       <q-btn
@@ -36,6 +18,27 @@
         </template>
       </q-btn>
     </q-card>
+    <q-card square>
+      <q-card-section>
+        <div>
+          <span class="text-dao-locked q-mr-sm">{{ locked }}</span>
+          <span class="text-blue-grey"> CKB {{ $t('label_in_dao') }}</span>
+        </div>
+        <div class="row justify-between">
+          <div>
+            <span class="text-blue-grey">{{ $t('label_apc') }}: </span>
+            <span class="text-dao-apc">{{ apc }}</span>
+          </div>
+          <div>
+            <span class="text-blue-grey">{{ $t('label_revenue') }}: </span>
+            <span class="text-dao-revenue">{{ revenue }} CKB</span>
+          </div>
+        </div>
+      </q-card-section>
+      <q-list bordered>
+        <dao-item v-for="item in list" :item="item" :key="item.hash" />
+      </q-list>
+    </q-card>
   </q-page>
 </template>
 
@@ -45,10 +48,11 @@ import { toCKB, fromCKB } from '../services/utils'
 import api from '../services/api'
 import { DAO } from '../services/chain'
 import DaoInput from '../components/DaoInput'
+import DaoItem from '../components/DaoItem'
 
 export default {
   name: 'Dao',
-  components: { DaoInput },
+  components: { DaoInput, DaoItem },
   data() {
     return {
       amount: 0,
@@ -83,7 +87,8 @@ export default {
     }
   },
   created() {
-    this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
+    // this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
+    // this.$store.dispatch('account/LOAD_BALANCE')
     this.$store.dispatch('chain/LOAD_FEE_RATE')
   },
   methods: {
@@ -118,12 +123,10 @@ export default {
       )
     }
   },
-  async mounted() {
-    this.$store.dispatch('account/LOAD_BALANCE')
-  },
   watch: {
-    async address() {
+    async address(address) {
       this.$store.dispatch('account/LOAD_BALANCE')
+      this.$store.dispatch('dao/LOAD_LIST', { address })
     },
     async amount(amount) {
       this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {

@@ -184,6 +184,20 @@ export const getLockScriptFromAddress = address => {
 
   return { codeHash, hashType, args }
 }
+const getLockScriptFromEthAddress = address => {
+  return {
+    codeHash: keccak_code_hash,
+    args: address,
+    hashType: 'type'
+  }
+}
+const getDaoTypeScript = () => {
+  return {
+    codeHash: ckb.config.daoDep.typeHash,
+    args: '0x',
+    hashType: ckb.config.daoDep.hashType
+  }
+}
 
 /**
  * build raw Tx for send etch locked cell to ckb locked cell
@@ -587,11 +601,7 @@ export const DAO = {
       deps: ckb.config.secp256k1Dep
     })
 
-    depositTx.outputs[0].type = {
-      codeHash: ckb.config.daoDep.typeHash,
-      args: '0x',
-      hashType: ckb.config.daoDep.hashType
-    }
+    depositTx.outputs[0].type = getDaoTypeScript()
     depositTx.outputsData[0] = '0x0000000000000000'
 
     depositTx.cellDeps = [
@@ -633,11 +643,56 @@ export const DAO = {
     return txHash
   },
 
+  async withdraw1(daoItem, address, feeRate) {
+    const unspentCells = await api.getUnspentCells(
+      getLockHash(address),
+      fromCKB(62)
+    )
+
+    const changeCell = unspentCells[0]
+    console.log('change cell', changeCell)
+    const { depositBlockHeader, hash, idx, size } = daoItem
+    const outPoint = {
+      txHash: hash,
+      index: '0x' + Number(idx).toString(16)
+    }
+    const outputCell = {
+      capacity: '0x' + JSBI.BigInt(size).toString(16),
+      lock: getLockScriptFromEthAddress(address),
+      type: getDaoTypeScript(),
+      outPoint: outPoint
+    }
+
+    let rawTx = this.buildWithdraw1Tx(
+      changeCell,
+      outPoint,
+      outputCell,
+      '0x10000',
+      depositBlockHeader,
+      address
+    )
+    const fee = this.getFee(feeRate, rawTx)
+    console.log('Fee', fee)
+    rawTx = this.buildWithdraw1Tx(
+      changeCell,
+      outPoint,
+      outputCell,
+      fee,
+      depositBlockHeader,
+      address
+    )
+    console.log('raw tx', rawTx)
+    const tx = await signTx([changeCell, outputCell], rawTx, address)
+    const txHash = await ckb.rpc.sendTransaction(tx)
+    console.log('DAO Withdraw 1 TX: ', txHash)
+    return txHash
+  },
+
   /**
    * Withdraw PHASE ONE
    */
   buildWithdraw1Tx: (
-    unspentCell,
+    changeCell,
     outPoint,
     outputCell,
     fee,
@@ -645,7 +700,7 @@ export const DAO = {
     fromAddress
   ) => {
     const encodedBlockNumber = ckb.utils.toHexInLittleEndian(
-      depositBlockHeader.number,
+      '0x' + Number(depositBlockHeader.number).toString(16),
       8
     )
     const tempAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
@@ -657,7 +712,7 @@ export const DAO = {
       safeMode: true,
       deps: ckb.config.secp256k1Dep,
       capacityThreshold: '0x0',
-      cells: unspentCell
+      cells: changeCell
     })
 
     rawTx.outputs = replaceOutputsLock(

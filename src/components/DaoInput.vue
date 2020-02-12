@@ -1,7 +1,7 @@
 <template>
   <q-card square>
     <q-card-section>
-      <p>{{ $t('hint_dao_deposit') }}({{ displayCKB(rawBalance) }})</p>
+      <p>{{ $t('hint_dao_deposit') }}</p>
       <q-input
         type="number"
         standout
@@ -12,6 +12,7 @@
         debounce="500"
         v-model="_amount"
         suffix="CKB"
+        :hint="`${$t('hint_available')}: ${displayCKB(rawBalance)} CKB`"
         :rules="rules('amount')"
         @input="validate"
       />
