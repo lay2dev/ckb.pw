@@ -38,7 +38,7 @@ export default {
   label_send_more: '再次发送',
   label_apc: '年化',
   label_locked: '锁定',
-  label_in_dao: '存入 DAO',
+  label_in_dao: 'in DAO',
   label_revenue: '收益',
   label_advanced: 'Advanced',
   label_cheap: '慢',
@@ -50,6 +50,7 @@ export default {
   hint_address: '支持 ETH 和 CKB 地址',
   hint_amount: '最小转账金额为',
   hint_available: '当前可用',
+  hint_dao_deposit: '存入 Nervos DAO',
 
   msg_dao_min_amount: '最少存入金额 102 CKB',
   msg_sent_success: '交易已发送',

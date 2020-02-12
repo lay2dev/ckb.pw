@@ -79,6 +79,7 @@ export const toCKB = capacity => {
 }
 
 export const fromCKB = capacity => {
+  capacity === '' && (capacity = 0)
   var cap = numberToString(capacity)
   const base = getValueOfUnit(unit)
   const baseLength = unitMap[unit].length - 1 || 1

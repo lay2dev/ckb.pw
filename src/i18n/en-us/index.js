@@ -50,6 +50,7 @@ export default {
   hint_address: 'ETH and CKB addresses are supported',
   hint_amount: 'Min transfer amount is ',
   hint_available: 'available',
+  hint_dao_deposit: 'Deposit to Nervos DAO',
 
   msg_dao_min_amount: 'Min amount is 102 CKB',
   msg_sent_success: 'Transaction Sent',

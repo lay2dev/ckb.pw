@@ -7,10 +7,10 @@ import * as ckbUtils from '@nervosnetwork/ckb-sdk-utils'
 import api from './api'
 import txSize from './txSize'
 import ABCWallet from 'abcwallet'
-import { formatCKBAddress } from './utils'
+import { formatCKBAddress, fromCKB } from './utils'
 
 export const ckb = new CKBCore('https://aggron.ckb.dev')
-const JSBI = ckb.utils.JSBI
+export const JSBI = ckb.utils.JSBI
 export const MIN_FEE_RATE = 1000
 
 var provider = ''
@@ -24,7 +24,7 @@ export const init = async ctx => {
   keccak_code_hash =
     '0xac8a4bc0656aeee68d4414681f4b2611341c4f0edd4c022f2d250ef8bb58682f'
   cellDeps[1].outPoint.txHash =
-    '0xcbb9503a8dfdfba7a4ee4661727aef74a5d90c687aee2eaee31652716c931a37'
+    '0xff1bb8baaa5fca57b82901f993b35d1c5f697c855133fad90ffe482c3e342612'
 
   // detecting locale
   ctx.$i18n.locale = ctx.$q.lang.getLocale()
@@ -120,7 +120,8 @@ export const getAccount = async ctx => {
 }
 
 export const loadDeps = async () => {
-  ckb.config.secp256k1Dep = await api.LoadK1()
+  ckb.config.secp256k1Dep = await api.loadK1()
+  ckb.config.daoDep = await api.loadDaoCell()
 }
 
 export const getFullAddress = (
@@ -525,168 +526,239 @@ export const getFee = function(feeRate, cells, outputs, address) {
   return fee.toString()
 }
 
-export const buildDepositDAOTx = async (
-  unspentCell,
-  fromAddress,
-  capacity,
-  fee
-) => {
-  const depositTx = ckb.generateRawTransaction({
-    fromAddress,
-    toAddress: fromAddress,
-    capacity: BigInt(capacity),
-    fee: BigInt(fee),
-    safeMode: true,
-    cells: unspentCell,
-    deps: ckb.config.secp256k1Dep
-  })
+const replaceOutputsLock = (tx, toAddressList, ethAddress) => {
+  const txOutputs = tx.outputs
 
-  depositTx.outputs[0].type = {
-    codeHash: ckb.config.daoDep.typeHash,
-    args: '0x',
-    hashType: ckb.config.daoDep.hashType
-  }
-  depositTx.outputsData[0] = '0x0000000000000000'
+  for (let i in txOutputs) {
+    if (i < toAddressList.length) {
+      const { address: toAddress } = toAddressList[i]
 
-  depositTx.cellDeps.push({
-    outPoint: ckb.config.daoDep.outPoint,
-    depType: 'code'
-  })
-  depositTx.witnesses.unshift({ lock: '', inputType: '', outputType: '' })
-
-  return depositTx
-}
-
-export const buildStarWithdrawingDAOTx = async (
-  unspentCell,
-  outPoint,
-  outputCell,
-  fee,
-  depositBlockHeader,
-  fromAddress
-) => {
-  const encodedBlockNumber = ckb.utils.toHexInLittleEndian(
-    depositBlockHeader.number,
-    8
-  )
-
-  const rawTx = ckb.generateRawTransaction({
-    fromAddress,
-    toAddress: fromAddress,
-    capacity: '0x0',
-    fee: BigInt(fee),
-    safeMode: true,
-    deps: ckb.config.secp256k1Dep,
-    capacityThreshold: '0x0',
-    cells: unspentCell
-  })
-
-  rawTx.outputs.splice(0, 1)
-  rawTx.outputsData.splice(0, 1)
-
-  rawTx.inputs.unshift({ previousOutput: outPoint, since: '0x0' })
-  rawTx.outputs.unshift(outputCell)
-  rawTx.cellDeps.push({
-    outPoint: ckb.config.daoDep.outPoint,
-    depType: 'code'
-  })
-  rawTx.headerDeps.push(depositBlockHeader.hash)
-  rawTx.outputsData.unshift(encodedBlockNumber)
-  rawTx.witnesses.unshift({
-    lock: '',
-    inputType: '',
-    outputType: ''
-  })
-
-  return rawTx
-}
-
-export const buildWithdrawDAOTx = async (
-  depositBlockHeader,
-  withdrawBlockHeader,
-  withdrawOutPoint,
-  fee,
-  toLock,
-  outputCapacity
-) => {
-  const { JSBI } = ckb.utils
-
-  const DAO_LOCK_PERIOD_EPOCHS = 180
-
-  const depositEpoch = depositBlockHeader.epoch
-  const withdrawEpoch = withdrawBlockHeader.epoch
-
-  const withdrawFraction = JSBI.multiply(
-    JSBI.BigInt(withdrawEpoch.index),
-    JSBI.BigInt(depositEpoch.length)
-  )
-  const depositFraction = JSBI.multiply(
-    JSBI.BigInt(depositEpoch.index),
-    JSBI.BigInt(withdrawEpoch.length)
-  )
-  let depositedEpochs = JSBI.subtract(
-    JSBI.BigInt(withdrawEpoch.number),
-    JSBI.BigInt(depositEpoch.number)
-  )
-  if (JSBI.greaterThan(withdrawFraction, depositFraction)) {
-    depositedEpochs = JSBI.add(depositedEpochs, JSBI.BigInt(1))
-  }
-  const lockEpochs = JSBI.multiply(
-    JSBI.divide(
-      JSBI.add(depositedEpochs, JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS - 1)),
-      JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS)
-    ),
-    JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS)
-  )
-  const minimalSince = absoluteEpochSince({
-    length: `0x${JSBI.BigInt(depositEpoch.length).toString(16)}`,
-    index: `0x${JSBI.BigInt(depositEpoch.index).toString(16)}`,
-    number: `0x${JSBI.add(
-      JSBI.BigInt(depositEpoch.number),
-      lockEpochs
-    ).toString(16)}`
-  })
-
-  const targetCapacity = JSBI.BigInt(outputCapacity)
-  const targetFee = JSBI.BigInt(`${fee}`)
-  if (JSBI.lessThan(targetCapacity, targetFee)) {
-    throw new Error(
-      `The fee(${targetFee}) is too big that withdraw(${targetCapacity}) is not enough`
-    )
-  }
-
-  const outputs = [
-    {
-      capacity: `0x${JSBI.subtract(targetCapacity, targetFee).toString(16)}`,
-      lock: toLock
-    }
-  ]
-
-  const outputsData = ['0x']
-
-  const tx = {
-    version: '0x0',
-    cellDeps: [
-      { outPoint: ckb.config.secp256k1Dep.outPoint, depType: 'depGroup' },
-      { outPoint: ckb.config.daoDep.outPoint, depType: 'code' }
-    ],
-    headerDeps: [depositBlockHeader.hash, withdrawBlockHeader.hash],
-    inputs: [
-      {
-        previousOutput: withdrawOutPoint,
-        since: minimalSince
+      if (toAddress.indexOf('ck') === 0) {
+        txOutputs[i].lock = getLockScriptFromAddress(toAddress)
+      } else {
+        txOutputs[i].lock = {
+          hashType: 'type',
+          codeHash: keccak_code_hash,
+          args: toAddress
+        }
       }
-    ],
-    outputs,
-    outputsData,
-    witnesses: [
+    } else {
+      // change output
+      txOutputs[i].lock = {
+        hashType: 'type',
+        codeHash: keccak_code_hash,
+        args: ethAddress
+      }
+    }
+  }
+
+  console.log(txOutputs)
+  return txOutputs
+}
+
+export const DAO = {
+  /**
+   * Deposit
+   */
+  buildDepositTx: (unspentCell, fromAddress, capacity, fee) => {
+    const tempAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
+    const depositTx = ckb.generateRawTransaction({
+      fromAddress: tempAddress,
+      toAddress: tempAddress,
+      capacity: BigInt(capacity),
+      fee: BigInt(fee),
+      safeMode: true,
+      cells: unspentCell,
+      deps: ckb.config.secp256k1Dep
+    })
+
+    depositTx.outputs[0].type = {
+      codeHash: ckb.config.daoDep.typeHash,
+      args: '0x',
+      hashType: ckb.config.daoDep.hashType
+    }
+    depositTx.outputsData[0] = '0x0000000000000000'
+
+    depositTx.cellDeps = [
+      ...cellDeps,
       {
-        lock: '',
-        inputType: '0x0000000000000000',
-        outputType: ''
+        depType: 'code',
+        outPoint: ckb.config.daoDep.outPoint
       }
     ]
-  }
 
-  return tx
+    depositTx.witnesses.unshift({ lock: '', inputType: '', outputType: '' })
+    depositTx.outputs = replaceOutputsLock(
+      depositTx,
+      [{ address: fromAddress }],
+      fromAddress
+    )
+
+    return depositTx
+  },
+
+  getFee: (feeRate, rawTx) => {
+    const size = txSize(rawTx)
+    const fee = JSBI.divide(
+      JSBI.multiply(JSBI.BigInt(size), JSBI.BigInt(feeRate)),
+      JSBI.BigInt(1000)
+    )
+
+    return fee.toString()
+  },
+
+  async deposit(address, amount, cells, feeRate) {
+    let rawTx = this.buildDepositTx(cells, address, fromCKB(amount), 0)
+    const fee = this.getFee(feeRate, rawTx)
+    rawTx = this.buildDepositTx(cells, address, fromCKB(amount), fee)
+    console.log('raw tx', rawTx)
+    const tx = await signTx(rawTx, address)
+    const txHash = await ckb.rpc.sendTransaction(tx)
+    console.log('DAO Deposit TX: ', txHash)
+    return txHash
+  },
+
+  /**
+   * Withdraw PHASE ONE
+   */
+  buildWithdraw1Tx: (
+    unspentCell,
+    outPoint,
+    outputCell,
+    fee,
+    depositBlockHeader,
+    fromAddress
+  ) => {
+    const encodedBlockNumber = ckb.utils.toHexInLittleEndian(
+      depositBlockHeader.number,
+      8
+    )
+    const tempAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
+    const rawTx = ckb.generateRawTransaction({
+      fromAddress: tempAddress,
+      toAddress: tempAddress,
+      capacity: '0x0',
+      fee: BigInt(fee),
+      safeMode: true,
+      deps: ckb.config.secp256k1Dep,
+      capacityThreshold: '0x0',
+      cells: unspentCell
+    })
+
+    rawTx.outputs = replaceOutputsLock(
+      rawTx,
+      [{ address: fromAddress }],
+      fromAddress
+    )
+
+    rawTx.outputs.splice(0, 1)
+    rawTx.outputsData.splice(0, 1)
+
+    rawTx.inputs.unshift({ previousOutput: outPoint, since: '0x0' })
+    rawTx.outputs.unshift(outputCell)
+    rawTx.cellDeps.push({
+      outPoint: ckb.config.daoDep.outPoint,
+      depType: 'code'
+    })
+    rawTx.headerDeps.push(depositBlockHeader.hash)
+    rawTx.outputsData.unshift(encodedBlockNumber)
+    rawTx.witnesses.unshift({
+      lock: '',
+      inputType: '',
+      outputType: ''
+    })
+
+    return rawTx
+  },
+
+  /**
+   * Withdraw PHASE TWO
+   */
+  buildWithdraw2Tx: (
+    depositBlockHeader,
+    withdrawBlockHeader,
+    withdrawOutPoint,
+    fee,
+    toLock,
+    outputCapacity
+  ) => {
+    const DAO_LOCK_PERIOD_EPOCHS = 180
+
+    const depositEpoch = depositBlockHeader.epoch
+    const withdrawEpoch = withdrawBlockHeader.epoch
+
+    const withdrawFraction = JSBI.multiply(
+      JSBI.BigInt(withdrawEpoch.index),
+      JSBI.BigInt(depositEpoch.length)
+    )
+    const depositFraction = JSBI.multiply(
+      JSBI.BigInt(depositEpoch.index),
+      JSBI.BigInt(withdrawEpoch.length)
+    )
+    let depositedEpochs = JSBI.subtract(
+      JSBI.BigInt(withdrawEpoch.number),
+      JSBI.BigInt(depositEpoch.number)
+    )
+    if (JSBI.greaterThan(withdrawFraction, depositFraction)) {
+      depositedEpochs = JSBI.add(depositedEpochs, JSBI.BigInt(1))
+    }
+    const lockEpochs = JSBI.multiply(
+      JSBI.divide(
+        JSBI.add(depositedEpochs, JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS - 1)),
+        JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS)
+      ),
+      JSBI.BigInt(DAO_LOCK_PERIOD_EPOCHS)
+    )
+    const minimalSince = absoluteEpochSince({
+      length: `0x${JSBI.BigInt(depositEpoch.length).toString(16)}`,
+      index: `0x${JSBI.BigInt(depositEpoch.index).toString(16)}`,
+      number: `0x${JSBI.add(
+        JSBI.BigInt(depositEpoch.number),
+        lockEpochs
+      ).toString(16)}`
+    })
+
+    const targetCapacity = JSBI.BigInt(outputCapacity)
+    const targetFee = JSBI.BigInt(`${fee}`)
+    if (JSBI.lessThan(targetCapacity, targetFee)) {
+      throw new Error(
+        `The fee(${targetFee}) is too big that withdraw(${targetCapacity}) is not enough`
+      )
+    }
+
+    const outputs = [
+      {
+        capacity: `0x${JSBI.subtract(targetCapacity, targetFee).toString(16)}`,
+        lock: toLock
+      }
+    ]
+
+    const outputsData = ['0x']
+
+    const tx = {
+      version: '0x0',
+      cellDeps: [
+        { outPoint: ckb.config.secp256k1Dep.outPoint, depType: 'depGroup' },
+        { outPoint: ckb.config.daoDep.outPoint, depType: 'code' }
+      ],
+      headerDeps: [depositBlockHeader.hash, withdrawBlockHeader.hash],
+      inputs: [
+        {
+          previousOutput: withdrawOutPoint,
+          since: minimalSince
+        }
+      ],
+      outputs,
+      outputsData,
+      witnesses: [
+        {
+          lock: '',
+          inputType: '0x0000000000000000',
+          outputType: ''
+        }
+      ]
+    }
+
+    return tx
+  }
 }

@@ -12,7 +12,7 @@
         </div>
       </q-card-section>
     </q-card>
-    <q-card class="card-dao-plus text-white">
+    <!-- <q-card class="card-dao-plus text-white">
       <q-card-section>
         <div class="text-h6">Nervos DAO +</div>
         <div class="text-subtitle2">
@@ -23,7 +23,7 @@
           <span>{{ $t('label_revenue') + ': ' + revenue }}</span>
         </div>
       </q-card-section>
-    </q-card>
+    </q-card> -->
   </q-page>
 </template>
 

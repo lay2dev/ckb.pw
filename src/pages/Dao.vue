@@ -1,6 +1,6 @@
 <template>
   <q-page class="bg-lime-1 column q-gutter-sm" padding>
-    <q-card>
+    <q-card square>
       <q-card-section>
         <div>
           <span class="text-dao-locked q-mr-sm">{{ locked }} CKB</span>
@@ -18,86 +18,104 @@
         </div>
       </q-card-section>
     </q-card>
+    <dao-input :amount.sync="amount" :ready.sync="ready" />
     <q-card>
-      <q-card-section>
-        <q-input
-          filled
-          v-model="amount"
-          class="text-dao-locked"
-          @click="selectInput"
-          type="number"
-          maxlength="12"
-          :hint="`${this.balance} CKB ${this.$t('hint_available')}`"
-          suffix="CKB"
-          no-error-icon
-          :rules="rules"
-        />
-        <q-slider
-          v-model="amount"
-          :min="102"
-          :max="parseInt(balance)"
-          color="primary"
-        />
-      </q-card-section>
-      <q-card-section>
-        <q-btn
-          push
-          no-caps
-          size="lg"
-          color="primary"
-          class="full-width"
-          label="Let's DAO !"
-          @click="lockIt"
-        />
-      </q-card-section>
+      <q-btn
+        push
+        no-caps
+        size="lg"
+        :color="canSend ? 'primary' : 'grey'"
+        class="full-width"
+        label="Let's DAO !"
+        :disable="!canSend"
+        :loading="loadingUnSpent || sending"
+        @click="lockIt"
+      >
+        <template v-slot:loading>
+          <q-spinner-facebook color="white" />
+        </template>
+      </q-btn>
     </q-card>
-    <q-btn
-      class="q-ma-lg float-right"
-      fab
-      color="primary"
-      @click="test"
-      label="TEST"
-    />
   </q-page>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB } from '../services/utils'
+import { toCKB, fromCKB } from '../services/utils'
 import api from '../services/api'
+import { DAO } from '../services/chain'
+import DaoInput from '../components/DaoInput'
 
 export default {
   name: 'Dao',
+  components: { DaoInput },
   data() {
     return {
-      amount: 102,
-      rules: [val => parseInt(val) > 101 || this.$t('msg_dao_min_amount')]
+      amount: 0,
+      ready: false,
+      sending: false,
+      sent: false
     }
   },
   computed: {
     ...mapGetters('dao', {
       locked: 'lockedGetter',
       revenue: 'revenueGetter',
-      apc: 'apcGetter'
+      apc: 'apcGetter',
+      list: 'listGetter',
+      loadingList: 'loadingListGetter'
     }),
     ...mapGetters('account', {
-      rawBalance: 'balanceGetter',
       address: 'addressGetter'
+    }),
+    ...mapGetters('cell', {
+      loadingUnSpent: 'loadingUnSpentGetter',
+      unSpent: 'unSpentGetter'
+    }),
+    ...mapGetters('chain', {
+      feeRate: 'feeRateGetter'
     }),
     balance: function() {
       return toCKB(this.rawBalance)
+    },
+    canSend: function() {
+      return this.ready && !this.loadingUnSpent && !this.sending
     }
   },
+  created() {
+    this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
+    this.$store.dispatch('chain/LOAD_FEE_RATE')
+  },
   methods: {
+    async lockIt() {
+      this.sending = true
+      try {
+        await DAO.deposit(
+          this.address,
+          this.amount,
+          this.unSpent.cells,
+          this.feeRate
+        )
+        this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
+          lastId: this.unSpent.lastId
+        })
+        this.sent = true
+      } catch (e) {
+        this.$q.notify({
+          message: e.toString(),
+          position: 'top',
+          timeout: 2000,
+          color: 'negative'
+        })
+        console.log(e)
+      }
+      this.sending = false
+    },
     async test() {
       await api.getUnspentCells(
         '0x787e97af6860c58fcecd12653714330c003f5b960e09f027295a49e3c41d609f',
         '0xd81215452e'
       )
-    },
-    async lockIt() {},
-    selectInput(e) {
-      e.srcElement.select()
     }
   },
   async mounted() {
@@ -106,13 +124,20 @@ export default {
   watch: {
     async address() {
       this.$store.dispatch('account/LOAD_BALANCE')
+    },
+    async amount(amount) {
+      this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
+        address: this.address,
+        capacity: fromCKB(amount),
+        lastId: this.unSpent.lastId
+      })
     }
   }
 }
 </script>
 <style lang="scss" scoped>
 .text-dao-locked {
-  font-size: 1.8em;
+  font-size: 1.5em;
 }
 .text-dao-apc {
   font-size: 1.2em;
