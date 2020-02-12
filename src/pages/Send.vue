@@ -201,7 +201,7 @@ export default {
       this.$store.dispatch('account/LOAD_BALANCE')
     },
     sendAmount(newVal) {
-      if (!this.outputsReady) return
+      // if (!this.outputsReady) return
       const needed = fromCKB(newVal)
       if (cmpAmount(needed, this.unSpent.capacity) === 'gt') {
         this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
