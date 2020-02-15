@@ -3,12 +3,12 @@
     <q-card class="card-dao text-white">
       <q-card-section @click="$router.push({ name: 'dao' })">
         <div class="text-h6">Nervos DAO</div>
-        <div class="text-subtitle2">
+        <div class="text-caption">
           {{ $t('label_locked') + ': ' + locked + ' CKB' }}
         </div>
-        <div class="text-subtitle2 row q-gutter-sm">
-          <span>{{ $t('label_apc') + ': ' + apc }}</span>
-          <span>{{ $t('label_revenue') + ': ' + revenue }}</span>
+        <div class="text-caption row q-gutter-sm">
+          <span>{{ $t('label_apc') + ': ' + apc }} %</span>
+          <span>{{ $t('label_revenue') + ': ' + revenue }} CKB</span>
         </div>
       </q-card-section>
     </q-card>
@@ -35,21 +35,26 @@ export default {
     return {}
   },
   computed: {
+    ...mapGetters('account', {
+      address: 'addressGetter'
+    }),
     ...mapGetters('dao', {
       locked: 'lockedGetter',
       apc: 'apcGetter',
       revenue: 'revenueGetter'
     })
   },
-  methods: {
-    updateDao() {
-      this.$store.commit('dao/SET_LOCKED', '1000000000000')
-      this.$store.commit('dao/SET_APC', '3.75')
-      this.$store.commit('dao/SET_REVENUE', '1234567890')
-    }
-  },
   mounted() {
-    this.updateDao()
+    this.$nextTick(() => {
+      if (this.address !== '-') {
+        this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
+      }
+    })
+  },
+  watch: {
+    address(address) {
+      this.$store.dispatch('dao/LOAD_LIST', { address })
+    }
   }
 }
 </script>

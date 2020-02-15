@@ -233,3 +233,7 @@ export const formatCKBAddress = function(address) {
   console.log(address, formatedAddress)
   return formatedAddress
 }
+
+export const displayDateTime = timestamp => {
+  return new Date(timestamp).toLocaleString()
+}

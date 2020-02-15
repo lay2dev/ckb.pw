@@ -44,6 +44,7 @@ export default {
         return this.amount
       },
       set(val) {
+        if (val == null) return
         this.$emit('update:amount', val)
       }
     }
