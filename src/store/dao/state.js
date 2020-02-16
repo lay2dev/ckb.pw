@@ -2,6 +2,8 @@ export default function() {
   return {
     locked: '-',
     apc: '-',
-    revenue: '-'
+    revenue: '-',
+    loadingList: false,
+    list: []
   }
 }

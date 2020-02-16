@@ -1,124 +1,187 @@
 <template>
-  <q-page class="bg-lime-1 column q-gutter-sm" padding>
-    <q-card>
-      <q-card-section>
-        <div>
-          <span class="text-dao-locked q-mr-sm">{{ locked }} CKB</span>
-          <span class="text-blue-grey">{{ $t('label_in_dao') }}</span>
-        </div>
-        <div class="row justify-between">
-          <div>
-            <span class="text-blue-grey">{{ $t('label_apc') }}: </span>
-            <span class="text-dao-apc">{{ apc }}</span>
-          </div>
-          <div>
-            <span class="text-blue-grey">{{ $t('label_revenue') }}: </span>
-            <span class="text-dao-revenue">{{ revenue }} CKB</span>
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-    <q-card>
-      <q-card-section>
-        <q-input
-          filled
-          v-model="amount"
-          class="text-dao-locked"
-          @click="selectInput"
-          type="number"
-          maxlength="12"
-          :hint="`${this.balance} CKB ${this.$t('hint_available')}`"
-          suffix="CKB"
-          no-error-icon
-          :rules="rules"
-        />
-        <q-slider
-          v-model="amount"
-          :min="102"
-          :max="parseInt(balance)"
-          color="primary"
-        />
-      </q-card-section>
-      <q-card-section>
+  <q-pull-to-refresh @refresh="refresh" color="primary">
+    <q-page class="bg-grey-4 q-gutter-sm" padding>
+      <dao-input :amount.sync="amount" :ready.sync="ready" />
+      <q-card>
         <q-btn
           push
           no-caps
           size="lg"
-          color="primary"
+          :color="canSend ? 'primary' : 'grey'"
           class="full-width"
           label="Let's DAO !"
+          :disable="!canSend"
+          :loading="loadingUnSpent || sending"
           @click="lockIt"
-        />
-      </q-card-section>
-    </q-card>
-    <q-btn
-      class="q-ma-lg float-right"
-      fab
-      color="primary"
-      @click="test"
-      label="TEST"
-    />
-  </q-page>
+        >
+          <template v-slot:loading>
+            <q-spinner-facebook color="white" />
+          </template>
+        </q-btn>
+      </q-card>
+      <q-card square>
+        <q-card-section>
+          <div>
+            <span class="text-dao-locked q-mr-sm">{{ locked }}</span>
+            <span class="text-blue-grey"> CKB {{ $t('label_in_dao') }}</span>
+          </div>
+          <div class="row justify-between">
+            <div>
+              <span class="text-blue-grey">{{ $t('label_apc') }}: </span>
+              <span>~{{ apc }} %</span>
+            </div>
+            <div>
+              <span class="text-blue-grey">{{ $t('label_revenue') }}: </span>
+              <span class="text-primary">~{{ revenue }} CKB</span>
+            </div>
+          </div>
+        </q-card-section>
+        <q-list>
+          <dao-item v-for="item in list" :item="item" :key="item.hash" />
+        </q-list>
+      </q-card>
+      <q-dialog v-model="sent" persistent>
+        <q-card>
+          <q-card-section class="row items-center">
+            <q-avatar icon="done_all" color="primary" text-color="white" />
+            <span class="q-ml-sm text-h5">{{ $t('msg_sent_success') }}</span>
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn
+              flat
+              :label="$t('label_return')"
+              color="blue-grey-6"
+              to="/"
+              v-close-popup
+            />
+            <q-btn
+              flat
+              :label="$t('label_send_more')"
+              color="primary"
+              @click="amount = 0"
+              v-close-popup
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+    </q-page>
+  </q-pull-to-refresh>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB } from '../services/utils'
+import { toCKB, fromCKB } from '../services/utils'
 import api from '../services/api'
+import { DAO } from '../services/chain'
+import DaoInput from '../components/DaoInput'
+import DaoItem from '../components/DaoItem'
 
 export default {
   name: 'Dao',
+  components: { DaoInput, DaoItem },
   data() {
     return {
-      amount: 102,
-      rules: [val => parseInt(val) > 101 || this.$t('msg_dao_min_amount')]
+      amount: 0,
+      ready: false,
+      sending: false,
+      sent: false
     }
   },
   computed: {
     ...mapGetters('dao', {
       locked: 'lockedGetter',
       revenue: 'revenueGetter',
-      apc: 'apcGetter'
+      apc: 'apcGetter',
+      list: 'listGetter',
+      loadingList: 'loadingListGetter'
     }),
     ...mapGetters('account', {
-      rawBalance: 'balanceGetter',
       address: 'addressGetter'
+    }),
+    ...mapGetters('cell', {
+      loadingUnSpent: 'loadingUnSpentGetter',
+      unSpent: 'unSpentGetter'
+    }),
+    ...mapGetters('chain', {
+      feeRate: 'feeRateGetter'
     }),
     balance: function() {
       return toCKB(this.rawBalance)
+    },
+    canSend: function() {
+      return this.ready && !this.loadingUnSpent && !this.sending
     }
   },
+  mounted() {
+    this.$nextTick(() => {
+      this.$store.dispatch('chain/LOAD_FEE_RATE')
+      if (this.address !== '-') {
+        this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
+      }
+    })
+  },
   methods: {
+    init(address = this.address) {
+      this.$store.dispatch('account/LOAD_BALANCE')
+      this.$store.dispatch('dao/LOAD_LIST', { address })
+    },
+    refresh(done) {
+      this.done = done
+      this.init()
+    },
+    async lockIt() {
+      this.sending = true
+      try {
+        await DAO.deposit(
+          this.address,
+          this.amount,
+          this.unSpent.cells,
+          this.feeRate
+        )
+        this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
+          lastId: this.unSpent.lastId
+        })
+        this.sent = true
+      } catch (e) {
+        this.$q.notify({
+          message: e.toString(),
+          position: 'top',
+          timeout: 2000,
+          color: 'negative'
+        })
+        console.log(e)
+      }
+      this.sending = false
+    },
     async test() {
       await api.getUnspentCells(
         '0x787e97af6860c58fcecd12653714330c003f5b960e09f027295a49e3c41d609f',
         '0xd81215452e'
       )
-    },
-    async lockIt() {},
-    selectInput(e) {
-      e.srcElement.select()
     }
   },
-  async mounted() {
-    this.$store.dispatch('account/LOAD_BALANCE')
-  },
   watch: {
-    async address() {
-      this.$store.dispatch('account/LOAD_BALANCE')
+    async address(address) {
+      this.init(address)
+    },
+    async amount(amount) {
+      this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
+        address: this.address,
+        capacity: fromCKB(amount),
+        lastId: this.unSpent.lastId
+      })
+    },
+    loadingList(loading) {
+      if (!loading && this.done) {
+        this.done()
+      }
     }
   }
 }
 </script>
 <style lang="scss" scoped>
 .text-dao-locked {
-  font-size: 1.8em;
-}
-.text-dao-apc {
-  font-size: 1.2em;
-}
-.text-dao-revenue {
-  font-size: 1.2em;
+  font-size: 1.5em;
 }
 .text-balance {
   font-size: 1.2em;

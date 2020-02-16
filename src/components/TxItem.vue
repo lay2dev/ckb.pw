@@ -1,20 +1,46 @@
 <template>
   <q-item class="q-pa-sm" clickable @click="checkTX(tx)" v-ripple>
     <q-item-section avatar>
-      <q-avatar
-        v-if="tx.direction === 'in'"
-        icon="call_received"
-        :size="avatarSize"
-        color="primary"
-        text-color="white"
-      />
-      <q-avatar
-        v-else
-        icon="call_made"
-        :size="avatarSize"
-        color="blue-grey-6"
-        text-color="white"
-      />
+      <div v-if="tx.direction === 'in'">
+        <q-avatar
+          v-if="tx.type === null"
+          icon="call_received"
+          :size="avatarSize"
+          color="primary"
+          text-color="white"
+        />
+
+        <q-avatar
+          v-if="tx.type === 'dao-withdraw2'"
+          icon="las la-coins"
+          :size="avatarSize"
+          color="primary"
+          text-color="white"
+        />
+      </div>
+      <div v-else>
+        <q-avatar
+          v-if="tx.type === null"
+          icon="call_made"
+          :size="avatarSize"
+          color="blue-grey-6"
+          text-color="white"
+        />
+        <q-avatar
+          v-if="tx.type === 'dao-deposit'"
+          icon="las la-piggy-bank"
+          :size="avatarSize"
+          color="orange"
+          text-color="white"
+        />
+        <q-avatar
+          v-if="tx.type === 'dao-withdraw1'"
+          icon="las la-clock"
+          :size="avatarSize"
+          color="amber-6"
+          text-color="white"
+        />
+      </div>
     </q-item-section>
     <q-item-section>
       <q-item-label lines="1">
@@ -34,7 +60,11 @@
         }}</span>
         <span>
           -
-          {{ displayAddress(tx.direction === 'in' ? tx.from : tx.to) }}</span
+          {{
+            tx.type
+              ? 'Nervos DAO'
+              : displayAddress(tx.direction === 'in' ? tx.from : tx.to)
+          }}</span
         >
       </q-item-label>
     </q-item-section>

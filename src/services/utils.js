@@ -79,6 +79,7 @@ export const toCKB = capacity => {
 }
 
 export const fromCKB = capacity => {
+  capacity === '' && (capacity = 0)
   var cap = numberToString(capacity)
   const base = getValueOfUnit(unit)
   const baseLength = unitMap[unit].length - 1 || 1
@@ -231,4 +232,8 @@ export const formatCKBAddress = function(address) {
     address.substring(0, 7) + '...' + address.substr(len - 7, 7)
   console.log(address, formatedAddress)
   return formatedAddress
+}
+
+export const displayDateTime = timestamp => {
+  return new Date(timestamp).toLocaleString()
 }

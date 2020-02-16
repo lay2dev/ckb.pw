@@ -11,7 +11,8 @@ export const API = {
   GetTxList: BASE_URL + 'cell/txList',
   GetConfig: BASE_URL + 'cell/getConfig',
   GetBalance: BASE_URL + 'cell/getCapacityByLockHash',
-  GetFeeRate: BASE_URL + 'block/feeRate'
+  GetFeeRate: BASE_URL + 'block/feeRate',
+  GetDAOList: BASE_URL + 'dao/daoList'
 }
 
 export const get = async (url, params) => {
@@ -54,11 +55,14 @@ export default {
     })
     return data
   },
-  LoadK1: async () => {
+  loadK1: async () => {
     const { data } = await get(API.LoadK1)
     return data
   },
-  loadDaoCell: async () => get(API.LoadDaoCell),
+  loadDaoCell: async () => {
+    const { data } = await get(API.LoadDaoCell)
+    return data
+  },
   getConfig: async () => {
     const { data } = await get(API.GetConfig)
     return data
@@ -74,5 +78,9 @@ export default {
     } else {
       return data.feeRate
     }
+  },
+  getDAOList: async lockHash => {
+    const { data } = await get(API.GetDAOList, { lockHash })
+    return data
   }
 }
