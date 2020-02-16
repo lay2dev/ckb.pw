@@ -124,7 +124,6 @@ export default {
     init(address = this.address) {
       this.$store.dispatch('account/LOAD_BALANCE')
       this.$store.dispatch('dao/LOAD_LIST', { address })
-      this.$store.commit('dao/SET_APC')
     },
     refresh(done) {
       this.done = done

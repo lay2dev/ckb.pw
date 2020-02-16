@@ -35,7 +35,8 @@ export function SET_LIST(state, list) {
 
   state.locked = locked.toString()
   state.revenue = revenue.toString()
-  state.apc = parseFloat(apc / parseFloat(toCKB(state.locked))).toFixed(2)
+  apc &&
+    (state.apc = parseFloat(apc / parseFloat(toCKB(state.locked))).toFixed(2))
 }
 
 export function LIST_LOADED(state) {
