@@ -21,6 +21,9 @@ export const init = async ctx => {
   let config = await api.getConfig()
   // keccak_code_hash = config.keccak_code_hash
   cellDeps = config.cellDeps
+
+  ctx.$store.commit('dao/SET_APC', config.apc)
+
   keccak_code_hash =
     '0xac8a4bc0656aeee68d4414681f4b2611341c4f0edd4c022f2d250ef8bb58682f'
   cellDeps[1].outPoint.txHash =
