@@ -38,12 +38,13 @@ export const init = async ctx => {
 
   imTokenInit(ctx)
   abcInit(ctx)
+  alphaInit(ctx)
+  console.log('IN: ', provider)
 }
 
 function imTokenInit(ctx) {
   if (!window.ethereum.isImToken) return
   provider = 'imToken'
-  console.log('IN: imToken')
 
   try {
     imToken.callAPI('navigator.configure', {
@@ -64,7 +65,6 @@ function imTokenInit(ctx) {
 function abcInit(ctx) {
   if (navigator.userAgent.indexOf('ABCWallet') < 0) return
   provider = 'ABCWallet'
-  console.log('IN: ABCWallet')
   ABCWallet.webview.setTitlebar({
     title: 'CKB P-Wallet',
     forecolor: '#ffffff',
@@ -75,6 +75,17 @@ function abcInit(ctx) {
     provider,
     showBar: false,
     showHeader: false,
+    showFooter: false
+  })
+}
+
+function alphaInit(ctx) {
+  if (navigator.userAgent.indexOf('AlphaWallet') < 0) return
+  provider = 'AlphaWallet'
+  ctx.$store.commit('config/UPDATE', {
+    provider,
+    showBar: false,
+    showHeader: true,
     showFooter: false
   })
 }
@@ -597,8 +608,8 @@ export const DAO = {
     const depositTx = ckb.generateRawTransaction({
       fromAddress: tempAddress,
       toAddress: tempAddress,
-      capacity: BigInt(capacity),
-      fee: BigInt(fee),
+      capacity: '0x' + JSBI.BigInt(capacity).toString(16),
+      fee: '0x' + JSBI.BigInt(fee).toString(16),
       safeMode: true,
       cells: unspentCell,
       deps: ckb.config.secp256k1Dep
@@ -716,7 +727,7 @@ export const DAO = {
       fromAddress: tempAddress,
       toAddress: tempAddress,
       capacity: '0x0',
-      fee: BigInt(fee),
+      fee: '0x' + JSBI.BigInt(fee).toString(16),
       safeMode: true,
       deps: ckb.config.secp256k1Dep,
       capacityThreshold: '0x0',
