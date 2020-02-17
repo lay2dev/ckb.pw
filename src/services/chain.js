@@ -164,7 +164,8 @@ export const getLockHash = address => {
 export const sendTx = async (cells, outputs, fee, address) => {
   const rawTx = buildTx(cells, outputs, fee, address)
   const tx = await signTx(cells, rawTx, address)
-  await ckb.rpc.sendTransaction(tx)
+  if (!tx) return null
+  return await ckb.rpc.sendTransaction(tx)
 }
 
 export const getLockScriptFromAddress = address => {
@@ -326,29 +327,34 @@ export const signTx = async (unspentCells, rawTx, address) => {
     message,
     address
   )
+  let tx = null
   console.log('signatureHexString', signatureHexString)
-  let signatureObj = ethUtil.fromRpcSig(signatureHexString)
-  signatureObj.v -= 27
-  signatureHexString = ethUtil.bufferToHex(
-    Buffer.concat([
-      ethUtil.setLengthLeft(signatureObj.r, 32),
-      ethUtil.setLengthLeft(signatureObj.s, 32),
-      ethUtil.toBuffer(signatureObj.v)
-    ])
-  )
-
-  emptyWitness.lock = signatureHexString
-
-  let signedWitnesses = [
-    serializeWitnessArgs(emptyWitness),
-    ...rawTx.witnesses.slice(1)
-  ]
-
-  let tx = {
-    ...rawTx,
-    witnesses: signedWitnesses.map(witness =>
-      typeof witness === 'string' ? witness : serializeWitnessArgs(witness)
+  try {
+    let signatureObj = ethUtil.fromRpcSig(signatureHexString)
+    signatureObj.v -= 27
+    signatureHexString = ethUtil.bufferToHex(
+      Buffer.concat([
+        ethUtil.setLengthLeft(signatureObj.r, 32),
+        ethUtil.setLengthLeft(signatureObj.s, 32),
+        ethUtil.toBuffer(signatureObj.v)
+      ])
     )
+
+    emptyWitness.lock = signatureHexString
+
+    let signedWitnesses = [
+      serializeWitnessArgs(emptyWitness),
+      ...rawTx.witnesses.slice(1)
+    ]
+
+    tx = {
+      ...rawTx,
+      witnesses: signedWitnesses.map(witness =>
+        typeof witness === 'string' ? witness : serializeWitnessArgs(witness)
+      )
+    }
+  } catch (e) {
+    console.log(e.toString())
   }
 
   return tx
@@ -384,7 +390,8 @@ export const signWitness = async (unspentCells, tx, message, from) => {
         },
         function(err, result) {
           if (err) {
-            reject(err)
+            // reject(err)
+            console.log(err.toString())
           }
           // console.log(result);
           resolve(result.result)
@@ -396,7 +403,8 @@ export const signWitness = async (unspentCells, tx, message, from) => {
     if (web3.currentProvider.isImToken) {
       web3.eth.sign(from, message, (err, result) => {
         if (err) {
-          reject(err)
+          // reject(err)
+          console.log(err.toString())
         }
         resolve(result)
       })
@@ -605,7 +613,7 @@ export const DAO = {
    */
   buildDepositTx: (unspentCell, fromAddress, capacity, fee) => {
     const tempAddress = 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
-    const depositTx = ckb.generateRawTransaction({
+    const txParams = {
       fromAddress: tempAddress,
       toAddress: tempAddress,
       capacity: '0x' + JSBI.BigInt(capacity).toString(16),
@@ -613,7 +621,9 @@ export const DAO = {
       safeMode: true,
       cells: unspentCell,
       deps: ckb.config.secp256k1Dep
-    })
+    }
+    console.log('tx params', txParams)
+    const depositTx = ckb.generateRawTransaction(txParams)
 
     depositTx.outputs[0].type = getDaoTypeScript()
     depositTx.outputsData[0] = '0x0000000000000000'
@@ -652,6 +662,7 @@ export const DAO = {
     rawTx = this.buildDepositTx(cells, address, fromCKB(amount), fee)
     console.log('raw tx', rawTx)
     const tx = await signTx(cells, rawTx, address)
+    if (!tx) return null
     const txHash = await ckb.rpc.sendTransaction(tx)
     console.log('DAO Deposit TX: ', txHash)
     return txHash
@@ -702,6 +713,7 @@ export const DAO = {
       outPoint: outPoint
     }
     const tx = await signTx([changeCell, outputCell], rawTx, address)
+    if (!tx) return null
     const txHash = await ckb.rpc.sendTransaction(tx)
     console.log('DAO Withdraw 1 TX: ', txHash)
     return txHash

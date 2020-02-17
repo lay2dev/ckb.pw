@@ -173,7 +173,7 @@ export default {
     async send() {
       this.sending = true
       try {
-        await sendTx(
+        const txHash = await sendTx(
           this.unSpent.cells,
           this.outputs.map(({ address, amount }) => {
             return { address, amount: fromCKB(amount) }
@@ -181,10 +181,12 @@ export default {
           this.fee,
           this.address
         )
-        this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
-          lastId: this.unSpent.lastId
-        })
-        this.sent = true
+        if (txHash) {
+          this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
+            lastId: this.unSpent.lastId
+          })
+          this.sent = true
+        }
       } catch (e) {
         this.$q.notify({
           message: e.toString(),

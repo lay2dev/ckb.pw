@@ -132,16 +132,18 @@ export default {
     async lockIt() {
       this.sending = true
       try {
-        await DAO.deposit(
+        const txHash = await DAO.deposit(
           this.address,
           this.amount,
           this.unSpent.cells,
           this.feeRate
         )
-        this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
-          lastId: this.unSpent.lastId
-        })
-        this.sent = true
+        if (txHash) {
+          this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
+            lastId: this.unSpent.lastId
+          })
+          this.sent = true
+        }
       } catch (e) {
         this.$q.notify({
           message: e.toString(),
