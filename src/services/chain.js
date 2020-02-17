@@ -18,6 +18,7 @@ var keccak_code_hash
 var cellDeps
 
 export const init = async ctx => {
+  await loadDeps()
   let config = await api.getConfig()
   // keccak_code_hash = config.keccak_code_hash
   cellDeps = config.cellDeps
@@ -136,6 +137,7 @@ export const getAccount = async ctx => {
 export const loadDeps = async () => {
   ckb.config.secp256k1Dep = await api.loadK1()
   ckb.config.daoDep = await api.loadDaoCell()
+  console.log('deps loaded', ckb.config)
 }
 
 export const getFullAddress = (

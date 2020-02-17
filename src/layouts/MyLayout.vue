@@ -28,7 +28,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { init, loadDeps } from '../services/chain'
+import { init } from '../services/chain'
 import vConsole from 'vconsole'
 export default {
   name: 'MyLayout',
@@ -58,7 +58,6 @@ export default {
     this.isHome = this.$route.path === '/account'
     this.$nextTick(async () => {
       await init(this)
-      await loadDeps()
     })
   },
   watch: {
