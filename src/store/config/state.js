@@ -3,7 +3,7 @@ export default function() {
     provider: '',
     showBar: false,
     showHeader: true,
-    showFooter: true,
+    showFooter: false,
     barHeight: 0,
     topOffset: 0,
     bottomOffset: 0
