@@ -11,8 +11,8 @@ import { initProvider } from './services/provider'
 import { initPW, setPlatform } from './services/ckb/core'
 import { initETHProvider } from './services/eth/core'
 
-const CKB_NODE = 'http://w.yamen.co:8114'
-// const CKB_NODE = 'https://aggron.ckb.dev'
+const CKB_NODE = 'https://aggron.ckb.dev'
+// const CKB_NODE = 'http://w.yamen.co:8114'
 
 export default {
   name: 'App',

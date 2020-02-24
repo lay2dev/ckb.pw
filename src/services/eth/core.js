@@ -110,7 +110,7 @@ const buildTypedData = (inputCapacity, outputs, messageHash) => {
     const { hashType, codeHash, args } = output.lock
     const capacity = BigInt(output.capacity)
     outputCapacity = JSBI.add(outputCapacity, capacity)
-    let amount = toCKB(capacity.toString()) + 'CKB'
+    let amount = toCKB(capacity.toString(), { pad: true }) + 'CKB'
     let address = 'unknown'
     if (codeHash !== '0x00000000000000000000000000000000') {
       if (codeHash === ckb.config.secp256k1Dep.codeHash) {

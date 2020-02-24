@@ -7,7 +7,8 @@ const BASE_URL = 'https://api.ckb.pw/'
 export const API = {
   GetUnspentCells: BASE_URL + 'cell/unSpent',
   LoadDaoCell: BASE_URL + 'cell/loadDaoCell',
-  LoadK1: BASE_URL + 'cell/loadSecp256k1Cell',
+  LoadK1Cell: BASE_URL + 'cell/loadSecp256k1Cell',
+  LoadMultiSigCell: BASE_URL + 'cell/loadMultiSigCell',
   GetTxList: BASE_URL + 'cell/txList',
   GetConfig: BASE_URL + 'cell/getConfig',
   GetBalance: BASE_URL + 'cell/getCapacityByLockHash',
@@ -55,8 +56,12 @@ export default {
     })
     return data
   },
-  loadK1: async () => {
-    const { data } = await get(API.LoadK1)
+  loadK1Cell: async () => {
+    const { data } = await get(API.LoadK1Cell)
+    return data
+  },
+  loadMultiSigCell: async () => {
+    const { data } = await get(API.LoadMultiSigCell)
     return data
   },
   loadDaoCell: async () => {

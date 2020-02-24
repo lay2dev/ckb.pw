@@ -91,6 +91,9 @@ export default {
       return this.showFullAddress ? getFullAddress(this.address) : this.address
     }
   },
+  created() {
+    this.loadBalance()
+  },
   methods: {
     async copyAddress() {
       try {
@@ -112,13 +115,14 @@ export default {
       })
     },
     displayBalance: balance => toCKB(balance).split('.'),
-    async loadBalance() {
-      this.$store.dispatch('account/LOAD_BALANCE')
+    async loadBalance(address = this.address) {
+      console.log('loading balance of ', address)
+      this.$store.dispatch('account/LOAD_BALANCE', address)
     }
   },
   watch: {
-    async address() {
-      await this.loadBalance()
+    async address(address) {
+      await this.loadBalance(address)
     }
   }
 }

@@ -1,12 +1,14 @@
 import api from '../../services/api'
 import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
-import { getLockScriptFromAddress } from '../../services/ckb/utils'
+import { getLockScriptFromETHAddress } from '../../services/ckb/utils'
 
-export async function LOAD_BALANCE({ commit, getters }) {
+export async function LOAD_BALANCE(
+  { commit, getters },
+  address = getters.addressGetter
+) {
   try {
-    const lockHash = scriptToHash(
-      getLockScriptFromAddress(getters.addressGetter)
-    )
+    const lockHash = scriptToHash(getLockScriptFromETHAddress(address))
+    console.log(`[LOAD_BALANCE] lockHash of ${address}`, lockHash)
     if (lockHash) {
       commit('LOADING_BALANCE')
       const capacity = await api.getBalance(lockHash)
@@ -14,7 +16,7 @@ export async function LOAD_BALANCE({ commit, getters }) {
       commit('BALANCE_LOADED')
     }
   } catch (e) {
-    e.toString()
+    console.log(e.toString())
   }
 }
 
@@ -24,7 +26,7 @@ export async function LOAD_TXS(
 ) {
   try {
     const lockHash = scriptToHash(
-      getLockScriptFromAddress(getters.addressGetter)
+      getLockScriptFromETHAddress(getters.addressGetter)
     )
     if (lockHash) {
       commit('LOADING_TXS')
@@ -45,6 +47,6 @@ export async function LOAD_TXS(
       console.log('address not ready')
     }
   } catch (e) {
-    e.toString()
+    console.log(e.toString())
   }
 }

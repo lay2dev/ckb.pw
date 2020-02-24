@@ -35,20 +35,23 @@ export const initPW = async nodeUrl => {
   ckb = new CKBCore(nodeUrl)
 
   const res = await Promise.all([
-    await ckb.rpc.getBlockchainInfo(),
-    await ckb.loadSecp256k1Dep(),
-    await ckb.loadDaoDep(),
-    await loadMultiSignScript(),
+    await api.loadK1Cell(),
+    await api.loadMultiSigCell(),
+    await api.loadDaoCell(),
     await api.getConfig()
   ])
   ckb.pw = {}
-  ckb.pw.chain = res[0].chain
-  ckb.config.multiSignDep = res[3]
-  ckb.pw.apc = res[4].apc
-  ckb.pw.keccak_code_hash = res[4].keccak_code_hash
-  ckb.pw.txCellDeps = res[4].cellDeps
+  ckb.config.secp256k1Dep = res[0]
+  ckb.config.multiSignDep = res[1]
+  ckb.config.daoDep = res[2]
+  ckb.pw.apc = res[3].apc
+  ckb.pw.keccak_code_hash = res[3].keccak_code_hash
+  ckb.pw.txCellDeps = res[3].cellDeps
+  ckb.rpc.getBlockchainInfo().then(info => {
+    ckb.pw.chain = info.chain
+    console.log('chain info', info)
+  })
 
-  console.log('chain info:', res[0])
   console.log('pw init: ', ckb.pw)
 }
 
@@ -258,23 +261,6 @@ async function reloadCells(address, needed) {
 
   cells = await api.getUnspentCells(lockHash, needed, lastId)
   console.log('[reloadCells] cells end', cells)
-}
-
-async function loadMultiSignScript() {
-  const genesisBlock = await ckb.rpc.getBlockByNumber('0x0')
-  const outPoint = {
-    txHash: genesisBlock.transactions[1].hash,
-    index: '0x01'
-  }
-  const codeHash = ckbUtils.scriptToHash(
-    genesisBlock.transactions[0].outputs[4].type
-  )
-  const hashType = 'type'
-  return {
-    codeHash,
-    hashType,
-    outPoint
-  }
 }
 
 function getInputCapacity(inputs) {

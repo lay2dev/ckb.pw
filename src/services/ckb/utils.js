@@ -124,7 +124,7 @@ export const isCKBAddress = address => {
 const ckbBase = '100000000'
 const zero = BigInt(0)
 
-export const toCKB = capacity => {
+export const toCKB = (capacity, options = {}) => {
   if (web3Utils.isHexStrict(capacity)) {
     capacity = web3Utils.hexToNumberString(capacity)
   }
@@ -132,7 +132,6 @@ export const toCKB = capacity => {
   const base = BigInt(ckbBase)
   const negative = JSBI.LT(cap, zero)
   const baseLength = ckbBase.length - 1
-  const options = {}
 
   if (negative) {
     // cap = cap.mul(negative1)
