@@ -38,8 +38,9 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB, displayDateTime } from '../services/utils'
-import { DAO } from '../services/chain'
+import { toCKB } from '../services/ckb/utils'
+import { displayDateTime } from '../services/utils'
+import { settle } from '../services/ckb/core'
 export default {
   name: 'DaoItem',
   props: ['item'],
@@ -69,7 +70,7 @@ export default {
       this.sending = true
       let txHash = ''
       if (this.item.type === 'deposit') {
-        txHash = await DAO.withdraw1(this.item, this.address, this.feeRate)
+        txHash = await settle(this.item, this.address)
       } else if (this.item.type === 'withdraw') {
         // txHash await DAO.withdraw2()
       }

@@ -46,7 +46,7 @@ export default {
   },
   mounted() {
     this.$nextTick(() => {
-      if (this.address !== '-') {
+      if (this.address.length) {
         this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
       }
     })

@@ -1,6 +1,6 @@
 // This is just an example,
 // so you can safely delete all default props below
-import { MIN_FEE_RATE } from '../../services/chain'
+import { MIN_FEE_RATE } from '../../services/ckb/core'
 
 export default {
   title: 'CKB P Wallet',

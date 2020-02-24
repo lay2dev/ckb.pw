@@ -22,8 +22,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB } from '../services/utils'
-import { JSBI } from '../services/chain'
+import { JSBI, toCKB } from '../services/ckb/utils'
 
 const MIN_DAO_AMOUNT = 102
 

@@ -70,11 +70,12 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB, fromCKB } from '../services/utils'
-import api from '../services/api'
-import { DAO } from '../services/chain'
+import { toCKB, fromCKB } from '../services/ckb/utils'
+import { deposit } from '../services/ckb/core'
 import DaoInput from '../components/DaoInput'
 import DaoItem from '../components/DaoItem'
+import api from '../services/api'
+import { setFeeRate } from '../services/ckb/core'
 
 export default {
   name: 'Dao',
@@ -113,9 +114,10 @@ export default {
     }
   },
   mounted() {
-    this.$nextTick(() => {
-      this.$store.dispatch('chain/LOAD_FEE_RATE')
-      if (this.address !== '-') {
+    this.$nextTick(async () => {
+      const feeRate = await api.getFeeRate()
+      setFeeRate(feeRate)
+      if (this.address.length) {
         this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
       }
     })
@@ -132,12 +134,7 @@ export default {
     async lockIt() {
       this.sending = true
       try {
-        const txHash = await DAO.deposit(
-          this.address,
-          this.amount,
-          this.unSpent.cells,
-          this.feeRate
-        )
+        const txHash = await deposit(this.address, this.amount)
         if (txHash) {
           this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
             lastId: this.unSpent.lastId
@@ -154,12 +151,6 @@ export default {
         console.log(e)
       }
       this.sending = false
-    },
-    async test() {
-      await api.getUnspentCells(
-        '0x787e97af6860c58fcecd12653714330c003f5b960e09f027295a49e3c41d609f',
-        '0xd81215452e'
-      )
     }
   },
   watch: {

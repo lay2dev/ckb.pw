@@ -1,13 +1,13 @@
+import * as ethUtil from 'ethereumjs-util'
 import web3Utils from 'web3-utils'
-import ethUtil from 'ethereumjs-util'
-import { ckb, JSBI, BigInt } from '../ckb/ckb'
-import { toCKB, truncatedAddress } from '../ckb/utils'
+import { ckb } from '../ckb/core'
+import { JSBI, BigInt, toCKB, truncatedAddress } from '../ckb/utils'
 
 export const initETHProvider = async onAddressChanged => {
+  console.log('init ethereum')
+  window.ethereum.autoRefreshOnNetworkChange = false
   if (typeof window.ethereum !== 'undefined') {
     try {
-      window.ethereum.autoRefreshOnNetworkChange = false
-
       // retrive address
       const accounts = await window.ethereum.enable()
       console.log('ETH Address: ', accounts[0])
@@ -35,6 +35,7 @@ export const ethSign = async (
   const signer = getSignerByProvider(provider)
   const message = web3Utils.sha3(hashBytes)
   const signature = await signer(fromAddress, message, typedDataParams)
+  console.log('signature', signature)
   let signatureObj = ethUtil.fromRpcSig(signature)
   signatureObj.v -= 27
   return ethUtil.bufferToHex(
@@ -56,6 +57,7 @@ const getSignerByProvider = provider => {
 const ImTokenSigner = (from, message) =>
   new Promise((resolve, reject) => {
     window.web3.eth.sign(from, message, (err, result) => {
+      console.log('[ImTokenSigner] sign', from, message, err, result)
       err & reject(err)
       resolve(result)
     })
@@ -97,9 +99,9 @@ const TypedDataSigner = (from, message, { inputCapacity, outputs }) =>
 
 const buildTypedData = (inputCapacity, outputs, messageHash) => {
   const typedData = getTypedDataTemplate()
-  typedData.message.hash = `0x${ethUtil
-    .hashPersonalMessage(ethUtil.toBuffer(messageHash))
-    .toString('hex')}`
+  typedData.message.hash =
+    '0x' +
+    ethUtil.hashPersonalMessage(ethUtil.toBuffer(messageHash)).toString('hex')
   typedData.message.to = []
 
   let outputCapacity = BigInt(0)
@@ -134,9 +136,10 @@ const buildTypedData = (inputCapacity, outputs, messageHash) => {
     typedData.message.to.push({ address, amount })
   })
 
-  typedData.message['input-sum'] = toCKB(inputCapacity.toString()) + 'CKB'
+  typedData.message['input-sum'] = toCKB(inputCapacity) + 'CKB'
   typedData.message.fee =
-    toCKB(JSBI.subtract(inputCapacity, outputCapacity).toString()) + 'CKB'
+    toCKB(JSBI.subtract(BigInt(inputCapacity), outputCapacity).toString()) +
+    'CKB'
 
   return JSON.stringify(typedData)
 }

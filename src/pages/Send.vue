@@ -36,7 +36,7 @@
         </div>
       </q-card-section>
       <q-slide-transition>
-        <fee-rate v-show="showFeeRate" />
+        <fee-rate v-show="showFeeRate" :feeRate.sync="feeRate" />
       </q-slide-transition>
       <q-separator />
       <q-card-actions align="around">
@@ -92,21 +92,20 @@
 <script>
 import OutputsForm from '../components/OutputsForm'
 import FeeRate from '../components/FeeRate'
+import api from '../services/api'
 import { mapGetters } from 'vuex'
-import {
-  sumAmount,
-  subAmount,
-  cmpAmount,
-  toCKB,
-  fromCKB
-} from '../services/utils'
-import { sendTx, getFee } from '../services/chain'
+import { toCKB, fromCKB } from '../services/ckb/utils'
+import { sumAmount, subAmount, cmpAmount } from '../services/utils'
+import { calcFee, sendTx, setFeeRate, MIN_FEE_RATE } from '../services/ckb/core'
 export default {
   name: 'Send',
   components: { 'outputs-form': OutputsForm, 'fee-rate': FeeRate },
   data() {
     return {
+      feeRate: MIN_FEE_RATE,
+      fee: 0,
       outputs: [],
+      loadingUnSpent: false,
       outputsReady: false,
       broke: false,
       sending: false,
@@ -117,7 +116,7 @@ export default {
   async mounted() {
     this.outputs.push({})
     this.$store.dispatch('account/LOAD_BALANCE')
-    this.$store.dispatch('chain/LOAD_FEE_RATE')
+    this.feeRate = await api.getFeeRate()
   },
   computed: {
     ...mapGetters('account', {
@@ -125,13 +124,6 @@ export default {
       balance: 'balanceGetter',
       loadingBalance: 'loadingBalanceGetter',
       MIN_AMOUNT: 'minAmountGetter'
-    }),
-    ...mapGetters('chain', {
-      feeRate: 'feeRateGetter'
-    }),
-    ...mapGetters('cell', {
-      unSpent: 'unSpentGetter',
-      loadingUnSpent: 'loadingUnSpentGetter'
     }),
     sendAmount() {
       if (!this.outputs.length) return 0
@@ -141,25 +133,6 @@ export default {
     },
     remaining() {
       return subAmount(this.balance, fromCKB(this.sendAmount))
-    },
-    fee() {
-      if (this.outputsReady) {
-        try {
-          const fee = getFee(
-            this.feeRate,
-            this.unSpent.cells,
-            this.outputs.map(({ address, amount }) => {
-              return { address, amount: fromCKB(amount) }
-            }),
-            this.address
-          )
-          console.log('FEE', fee)
-          if (fee) return fee
-        } catch (e) {
-          console.log(e.toString())
-        }
-      }
-      return '0'
     }
   },
   methods: {
@@ -173,18 +146,8 @@ export default {
     async send() {
       this.sending = true
       try {
-        const txHash = await sendTx(
-          this.unSpent.cells,
-          this.outputs.map(({ address, amount }) => {
-            return { address, amount: fromCKB(amount) }
-          }),
-          this.fee,
-          this.address
-        )
+        const txHash = await sendTx(this.address, this.outputs)
         if (txHash) {
-          this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
-            lastId: this.unSpent.lastId
-          })
           this.sent = true
         }
       } catch (e) {
@@ -202,16 +165,11 @@ export default {
     address() {
       this.$store.dispatch('account/LOAD_BALANCE')
     },
-    sendAmount(newVal) {
+    async sendAmount(amount) {
       // if (!this.outputsReady) return
-      const needed = fromCKB(newVal)
-      if (cmpAmount(needed, this.unSpent.capacity) === 'gt') {
-        this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
-          address: this.address,
-          capacity: needed,
-          lastId: this.unSpent.lastId
-        })
-      }
+      this.loadingUnSpent = true
+      this.fee = await calcFee(this.address, amount, { data: this.outputs })
+      this.loadingUnSpent = false
     },
     remaining(remaining) {
       if (cmpAmount(remaining, 0) === 'lt') {
@@ -225,6 +183,9 @@ export default {
       } else {
         this.broke = false
       }
+    },
+    feeRate(feeRate) {
+      this.fee = setFeeRate(feeRate)
     }
   }
 }

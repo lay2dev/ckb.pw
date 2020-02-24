@@ -3,7 +3,7 @@
     <q-card id="metaCard" square class="q-mb-sm">
       <q-card-section
         @click="loadBalance()"
-        :class="`${platform}-card-bg`"
+        :class="`eth-card-bg`"
         class="text-white"
       >
         <div v-if="loadingBalance" class="balance-text-int text-blue-grey-4">
@@ -70,8 +70,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import { copyToClipboard } from 'quasar'
-import { getFullAddress } from '../services/chain'
-import { toCKB } from '../services/utils'
+import { toCKB, getFullAddress } from '../services/ckb/utils'
 import VueQr from 'vue-qr'
 export default {
   name: 'MetaCard',
@@ -86,8 +85,7 @@ export default {
     ...mapGetters('account', {
       balance: 'balanceGetter',
       address: 'addressGetter',
-      loadingBalance: 'loadingBalanceGetter',
-      platform: 'platformGetter'
+      loadingBalance: 'loadingBalanceGetter'
     }),
     chosenAddress() {
       return this.showFullAddress ? getFullAddress(this.address) : this.address

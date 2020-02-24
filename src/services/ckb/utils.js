@@ -1,15 +1,18 @@
-import { ckb, JSBI, BigInt } from './ckb'
+import { ckb } from './core'
 import * as ckbUtils from '@nervosnetwork/ckb-sdk-utils'
 import web3Utils from 'web3-utils'
 
+export const JSBI = ckbUtils.JSBI
+export const { BigInt } = JSBI
+
 // get full payload address from args(i.e. an ETH address)
-export const getFullAddress = args =>
-  ckbUtils.fullPayloadToAddress(
-    args,
-    ckb.chain === 'main' ? 'ckb' : 'ckt',
-    '0x04', // hash_type = 'Type'
-    ckb.keccak_code_hash
-  )
+export const getFullAddress = arg =>
+  ckbUtils.fullPayloadToAddress({
+    arg,
+    prefix: ckb.pw.chain === 'main' ? 'ckb' : 'ckt',
+    type: '0x04', // hash_type = 'Type'
+    codeHash: ckb.pw.keccak_code_hash
+  })
 
 export const getLockScriptFromCKBAddress = address => {
   const payload = ckbUtils.parseAddress(address, 'hex').replace('0x', '')
@@ -20,7 +23,7 @@ export const getLockScriptFromCKBAddress = address => {
   if (type === '01') {
     // short address
 
-    switch (payload.substring(2, 2)) {
+    switch (payload.substr(2, 2)) {
       case '00': // secp256k1 lock script
         lockScript.codeHash = ckb.config.secp256k1Dep.codeHash
         lockScript.hashType = ckb.config.secp256k1Dep.hashType
@@ -51,7 +54,7 @@ export const getLockScriptFromCKBAddress = address => {
 }
 
 export const getLockScriptFromETHAddress = address => ({
-  codeHash: ckb.keccak_code_hash,
+  codeHash: ckb.pw.keccak_code_hash,
   hashType: 'type',
   args: address
 })
@@ -67,6 +70,26 @@ export const getDaoTypeScript = () => ({
   hashType: ckb.config.daoDep.hashType,
   args: '0x'
 })
+
+export const getPWDaoDeps = () => [
+  ...ckb.pw.txCellDeps,
+  { depType: 'code', outPoint: ckb.config.daoDep.outPoint }
+]
+
+export const absoluteEpochSince = ({ length, index, number }) => {
+  const epochSince = JSBI.add(
+    JSBI.add(
+      JSBI.add(
+        JSBI.leftShift(BigInt(0x20), BigInt(56)),
+        JSBI.leftShift(BigInt(length), BigInt(40))
+      ),
+      JSBI.leftShift(BigInt(index), BigInt(24))
+    ),
+    BigInt(number)
+  )
+
+  return numberToHexString(epochSince)
+}
 
 export const isCKBAddress = address => {
   // address must be a string
@@ -98,20 +121,6 @@ export const isCKBAddress = address => {
 
   return maybe
 }
-export const sumAmount = (a = 0, b = 0) =>
-  JSBI.add(BigInt(a), BigInt(b)).toString()
-
-export const subAmount = (a = 0, b = 0) =>
-  JSBI.subtract(BigInt(a), BigInt(b)).toString()
-
-export const cmpAmount = (a = 0, b = 0) => {
-  const A = BigInt(a)
-  const B = BigInt(b)
-  if (JSBI.GT(A, B)) return 'gt'
-  if (JSBI.LT(A, B)) return 'lt'
-  return 'eq'
-}
-
 const ckbBase = '100000000'
 const zero = BigInt(0)
 
@@ -229,4 +238,10 @@ export const mergeTypedArraysUnsafe = (a, b) => {
   c.set(b, a.length)
 
   return c
+}
+
+export const numberToHexString = n => {
+  // eslint-disable-next-line valid-typeof
+  typeof n !== 'bigint' && (n = BigInt(n))
+  return `0x${n.toString(16)}`
 }

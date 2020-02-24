@@ -115,7 +115,7 @@ export default {
   methods: {
     async scanQR(index) {
       let address = ''
-      if (this.provider === 'imToken') {
+      if (this.provider === 'ImToken') {
         // eslint-disable-next-line no-undef
         address = await imToken.callPromisifyAPI('native.scanQRCode')
       } else if (this.provider === 'ABCWallet') {

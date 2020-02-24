@@ -1,6 +1,6 @@
 import ABCWallet from 'abcwallet'
 
-export const init = () => {
+export const initProvider = () => {
   const UA = navigator.userAgent
   if (window.ethereum.isImToken) return initImToken()
   if (UA.indexOf('ABCWallet') > 0) return initABCWallet()

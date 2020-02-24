@@ -1,5 +1,9 @@
 <template>
-  <q-page id="view" class="bg-grey-4 column q-pa-sm no-scroll">
+  <q-page
+    id="view"
+    class="bg-grey-4 column q-pa-sm no-scroll"
+    v-touch-hold:2000="toggleVConsole"
+  >
     <q-pull-to-refresh @refresh="refresh" color="primary">
       <meta-card ref="meta" />
       <keep-alive>
@@ -36,7 +40,6 @@ export default {
       txs: 'txsGetter'
     }),
     ...mapGetters('config', {
-      barHeight: 'barHeightGetter',
       topOffset: 'topOffsetGetter',
       bottomOffset: 'bottomOffsetGetter'
     })
@@ -49,6 +52,29 @@ export default {
         this.$refs.tx.loadTXs()
       ])
       done && done()
+    },
+    toggleVConsole() {
+      let vConsole = localStorage.getItem('vconsole')
+      vConsole = vConsole === 'on' ? 'off' : 'on'
+      this.$q.notify({
+        message: `vConsole will be switched ${vConsole}`,
+        position: 'top',
+        actions: [
+          {
+            label: 'Cancel',
+            color: 'white',
+            handler: () => {}
+          },
+          {
+            label: 'OK, Reload',
+            color: 'primary',
+            handler: () => {
+              localStorage.setItem('vconsole', vConsole)
+              window.location.reload()
+            }
+          }
+        ]
+      })
     }
   }
 }
