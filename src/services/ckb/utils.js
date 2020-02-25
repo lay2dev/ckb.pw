@@ -219,7 +219,7 @@ export const fromCKB = capacity => {
     cap = JSBI.unaryMinus(cap)
   }
 
-  return cap
+  return cap.toString()
 }
 
 export const truncatedAddress = function(address, length = 17) {

@@ -11,6 +11,8 @@ import txSize from './txSize'
 import { sumAmount, cmpAmount } from '../utils'
 import {
   fromCKB,
+  JSBI,
+  BigInt,
   getLockScriptFromAddress,
   mergeTypedArraysUnsafe,
   getDaoTypeScript,
@@ -250,10 +252,10 @@ async function reloadCells(address, needed) {
   console.log('[reloadCells] cells begin', cells)
   if (cells.length) {
     const local = cells.map(c => c.capacity).reduce(sumAmount)
-    console.log('[reloadCells] local, needed', local, needed)
+    console.log('[reloadCells] local, needed:', local, needed)
     if (cmpAmount(local, needed) === 'lt') {
       // lastId = cells[cells.length - 1].id
-      // needed = JSBI.subtract(needed, local)
+      needed = JSBI.subtract(BigInt(needed), BigInt(local)).toString()
       console.log('[reloadCells] new needed', needed)
     } else return
   }
@@ -263,7 +265,7 @@ async function reloadCells(address, needed) {
 }
 
 function getInputCapacity(inputs) {
-  const cellId = ({ txhash, index }) => `${txhash}+${index}`
+  const cellId = ({ txHash, index }) => `${txHash}+${index}`
   const cellMatch = input =>
     cells.find(c => cellId(c.outPoint) === cellId(input.previousOutput))
   return inputs.map(i => cellMatch(i).capacity).reduce(sumAmount)
