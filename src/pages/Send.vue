@@ -139,10 +139,20 @@ export default {
   methods: {
     resetTXs() {
       this.outputs = [{}]
+      this.fee = 0
       this.$refs.outputs_form.resetOutputs()
     },
     displayCKB(val) {
       return toCKB(val).split('.')
+    },
+    async getFee(amount) {
+      this.loadingUnSpent = true
+      try {
+        this.fee = await calcFee(this.address, amount, { data: this.outputs })
+      } catch (e) {
+        console.log(e.toString())
+      }
+      this.loadingUnSpent = false
     },
     async send() {
       this.sending = true
@@ -153,7 +163,7 @@ export default {
             category: 'conversions',
             action: 'TransferEvent',
             label: this.address,
-            value: `${this.sendAmount} CKB sent in ${txHash}`
+            value: Number(this.sendAmount)
           }
           GTM.logEvent(gtmEvent)
           this.sent = true
@@ -173,15 +183,9 @@ export default {
     address() {
       this.$store.dispatch('account/LOAD_BALANCE')
     },
-    async sendAmount(amount) {
-      // if (!this.outputsReady) return
-      this.loadingUnSpent = true
-      try {
-        this.fee = await calcFee(this.address, amount, { data: this.outputs })
-      } catch (e) {
-        console.log(e.toString())
-      }
-      this.loadingUnSpent = false
+    sendAmount(amount) {
+      if (!this.outputsReady) return
+      this.getFee(amount)
     },
     remaining(remaining) {
       if (cmpAmount(remaining, 0) === 'lt') {
@@ -198,6 +202,13 @@ export default {
     },
     feeRate(feeRate) {
       this.fee = setFeeRate(feeRate)
+    },
+    outputsReady(ready) {
+      if (ready) {
+        this.getFee(this.sendAmount)
+      } else {
+        this.fee = 0
+      }
     }
   }
 }

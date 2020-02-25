@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { uid } from 'quasar'
 
 export default {
@@ -5,12 +6,12 @@ export default {
     const { category, action, label, value } = e
     // eslint-disable-next-line no-undef
     dataLayer.push({
-      event: 'customEvent',
-      category,
-      action,
-      label,
-      value,
-      cid: this.getCid()
+      'event': 'customEvent',
+      'category': category,
+      'action': action,
+      'label': label,
+      'value': value,
+      'cid': this.getCid()
     })
     console.log('[GTM Event]', e)
   },
@@ -19,9 +20,9 @@ export default {
     // Here you can preprocess the path, if needed
     // eslint-disable-next-line no-undef
     dataLayer.push({
-      event: 'customPageView',
-      path: path,
-      cid: this.getCid()
+      'event': 'customPageView',
+      'path': path,
+      'cid': this.getCid()
     })
   },
 
