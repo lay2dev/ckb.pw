@@ -70,8 +70,8 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB, fromCKB } from '../services/ckb/utils'
-import { deposit } from '../services/ckb/core'
+import { toCKB } from '../services/ckb/utils'
+import { deposit, calcFee } from '../services/ckb/core'
 import DaoInput from '../components/DaoInput'
 import DaoItem from '../components/DaoItem'
 import api from '../services/api'
@@ -83,6 +83,7 @@ export default {
   data() {
     return {
       amount: 0,
+      loadingUnSpent: false,
       ready: false,
       sending: false,
       sent: false
@@ -98,10 +99,6 @@ export default {
     }),
     ...mapGetters('account', {
       address: 'addressGetter'
-    }),
-    ...mapGetters('cell', {
-      loadingUnSpent: 'loadingUnSpentGetter',
-      unSpent: 'unSpentGetter'
     }),
     ...mapGetters('chain', {
       feeRate: 'feeRateGetter'
@@ -136,9 +133,6 @@ export default {
       try {
         const txHash = await deposit(this.address, this.amount)
         if (txHash) {
-          this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
-            lastId: this.unSpent.lastId
-          })
           this.sent = true
         }
       } catch (e) {
@@ -158,11 +152,13 @@ export default {
       this.init(address)
     },
     async amount(amount) {
-      this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
-        address: this.address,
-        capacity: fromCKB(amount),
-        lastId: this.unSpent.lastId
-      })
+      this.loadingUnSpent = true
+      try {
+        this.fee = await calcFee(this.address, amount, { type: 'deposit' })
+      } catch (e) {
+        console.log(e)
+      }
+      this.loadingUnSpent = false
     },
     loadingList(loading) {
       if (!loading && this.done) {

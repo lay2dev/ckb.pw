@@ -122,9 +122,11 @@ export const sendTx = async (fromAddress, outputs) => {
 export const deposit = async (fromAddress, amount) => {
   const fee = await calcFee(fromAddress, amount, { type: 'deposit' })
   const depositTx = depositTxBuilder(fromAddress, amount, cells, fee)
+  console.log('[deposit] deposit tx', depositTx)
   const signedTx = await sign(depositTx, fromAddress)
+  console.log('[deposit] signed tx', signedTx)
 
-  const txHash = await ckb.rpc.sendTransaction(signedTx, 'passthrough')
+  const txHash = await ckb.rpc.sendTransaction(signedTx)
   // clear local cells when sent
   lastId = cells[cells.length - 1].id
   cells = []
@@ -157,7 +159,7 @@ export const settle = async (fromAddress, daoItem) => {
   cells.push(outputCell)
   const signedTx = await sign(settleTx, fromAddress)
 
-  const txHash = await ckb.rpc.sendTransaction(signedTx, 'passthrough')
+  const txHash = await ckb.rpc.sendTransaction(signedTx)
   // clear local cells when sent
   lastId = cells[cells.length - 1].id
   cells = []
@@ -204,8 +206,6 @@ async function sign(rawTx, fromAddress) {
   })
 
   // now we can sign with desired provider
-  console.log('[sign] hashBytes: ', hashBytes)
-  console.log('[sign] platform: ', platform)
   let tx = null
   let typedDataParams = null
   if (platform.typedData) {
@@ -222,7 +222,6 @@ async function sign(rawTx, fromAddress) {
         platform.provider,
         typedDataParams
       )
-      console.log('[sign] witness lock', emptyWitness.lock)
     } else {
       throw new Error('Unsupported platform: ', platform)
     }
@@ -239,7 +238,7 @@ async function sign(rawTx, fromAddress) {
       )
     }
   } catch (e) {
-    console.log(e)
+    console.log('[sign] error', e)
   }
 
   return tx

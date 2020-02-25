@@ -57,8 +57,7 @@ const getSignerByProvider = provider => {
 const ImTokenSigner = (from, message) =>
   new Promise((resolve, reject) => {
     window.web3.eth.sign(from, message, (err, result) => {
-      console.log('[ImTokenSigner] sign', from, message, err, result)
-      err & reject(err)
+      err && reject(err)
       resolve(result)
     })
   })

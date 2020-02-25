@@ -14,6 +14,7 @@
         suffix="CKB"
         :hint="`${$t('hint_available')}: ${displayCKB(rawBalance)} CKB`"
         :rules="rules('amount')"
+        @focus="selectInput"
         @input="validate"
       />
     </q-card-section>
@@ -43,7 +44,7 @@ export default {
         return this.amount
       },
       set(val) {
-        if (val == null) return
+        if (val == null) val = 0
         this.$emit('update:amount', val)
       }
     }

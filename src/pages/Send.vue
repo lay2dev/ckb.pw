@@ -97,6 +97,7 @@ import { mapGetters } from 'vuex'
 import { toCKB, fromCKB } from '../services/ckb/utils'
 import { sumAmount, subAmount, cmpAmount } from '../services/utils'
 import { calcFee, sendTx, setFeeRate, MIN_FEE_RATE } from '../services/ckb/core'
+import GTM from '../components/gtm'
 export default {
   name: 'Send',
   components: { 'outputs-form': OutputsForm, 'fee-rate': FeeRate },
@@ -148,6 +149,13 @@ export default {
       try {
         const txHash = await sendTx(this.address, this.outputs)
         if (txHash) {
+          const gtmEvent = {
+            category: 'conversions',
+            action: 'TransferEvent',
+            label: this.address,
+            value: `${this.sendAmount} CKB sent in ${txHash}`
+          }
+          GTM.logEvent(gtmEvent)
           this.sent = true
         }
       } catch (e) {
@@ -168,7 +176,11 @@ export default {
     async sendAmount(amount) {
       // if (!this.outputsReady) return
       this.loadingUnSpent = true
-      this.fee = await calcFee(this.address, amount, { data: this.outputs })
+      try {
+        this.fee = await calcFee(this.address, amount, { data: this.outputs })
+      } catch (e) {
+        console.log(e.toString())
+      }
       this.loadingUnSpent = false
     },
     remaining(remaining) {
