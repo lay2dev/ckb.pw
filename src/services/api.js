@@ -1,4 +1,6 @@
+/* eslint-disable prettier/prettier */
 import axios from 'axios'
+import GTM from '../components/gtm'
 import { Notify } from 'quasar'
 
 const BASE_URL = 'https://api.ckb.pw/'
@@ -27,6 +29,12 @@ export const get = async (url, params) => {
   try {
     ret = await axios.get(url)
   } catch (e) {
+    GTM.logEvent({
+      'category': 'exceptions',
+      'action': url.split('/').pop(),
+      'label': 'API',
+      'value': 'error: ' + e.toString() + 'params: ' + JSON.stringify(params)
+    })
     Notify.create({
       message: '[API] - ' + e.toString(),
       position: 'top',

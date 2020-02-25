@@ -9,7 +9,7 @@
         dense
         debounce="500"
         hide-bottom-space
-        v-model.number="feeRate"
+        v-model.number="_feeRate"
         no-error-icon
         :rules="[val => val >= minFeeRate || $t('msg_min_fee_rate')]"
       >
