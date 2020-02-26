@@ -37,10 +37,10 @@ export const initPW = async nodeUrl => {
   ckb = new CKBCore(nodeUrl)
 
   const res = await Promise.all([
-    await api.loadK1Cell(),
-    await api.loadMultiSigCell(),
-    await api.loadDaoCell(),
-    await api.getConfig()
+    api.loadK1Cell(),
+    api.loadMultiSigCell(),
+    api.loadDaoCell(),
+    api.getConfig()
   ])
   ckb.pw = {}
   ckb.config.secp256k1Dep = res[0]

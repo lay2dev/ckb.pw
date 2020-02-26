@@ -9,6 +9,7 @@ export const initProvider = () => {
   // as other wallets often declare themselves
   // to be MetaMask for compatibility purpose
   if (window.ethereum.isMetaMask) return initMetaMask()
+  return initDefault()
 }
 
 function initImToken() {
@@ -48,6 +49,13 @@ function initAlphaWallet() {
 function initMetaMask() {
   return {
     provider: 'MetaMask',
+    showHeader: true
+  }
+}
+
+function initDefault() {
+  return {
+    provider: 'Unknown',
     showHeader: true
   }
 }

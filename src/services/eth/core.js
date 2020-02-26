@@ -4,24 +4,27 @@ import { ckb } from '../ckb/core'
 import { JSBI, BigInt, toCKB, truncatedAddress } from '../ckb/utils'
 
 export const initETHProvider = async onAddressChanged => {
-  console.log('init ethereum')
-  window.ethereum.autoRefreshOnNetworkChange = false
   if (typeof window.ethereum !== 'undefined') {
+    console.log('Ethereum Detected')
     try {
+      window.ethereum.autoRefreshOnNetworkChange = false
+
       // retrive address
       const accounts = await window.ethereum.enable()
-      console.log('ETH Address: ', accounts[0])
 
       // watch address change
-      window.ethereum.on('accountsChanged', function(accounts) {
-        onAddressChanged && onAddressChanged(accounts[0])
-      })
+      window.ethereum.on &&
+        window.ethereum.on('accountsChanged', function(accounts) {
+          onAddressChanged && onAddressChanged(accounts[0])
+        })
 
+      console.log('ETH Address: ', accounts[0])
       return accounts[0]
     } catch (err) {
       return null
     }
   } else {
+    console.log('Ethereum Env Not Found')
     return null
   }
 }

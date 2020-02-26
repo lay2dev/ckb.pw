@@ -51,8 +51,8 @@ export default {
     this.address.length && this.loadTXs(this.address)
   },
   methods: {
-    async loadTXs(address) {
-      !address && (address = this.address)
+    async loadTXs(address = this.address) {
+      if (!address) return
       this.loading = true
       const _txs = await api.getTxList(
         scriptToHash(getLockScriptFromAddress(address)),

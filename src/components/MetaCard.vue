@@ -91,8 +91,10 @@ export default {
       return this.showFullAddress ? getFullAddress(this.address) : this.address
     }
   },
-  created() {
-    this.loadBalance()
+  mounted() {
+    this.$nextTick(() => {
+      this.loadBalance()
+    })
   },
   methods: {
     async copyAddress() {
@@ -117,12 +119,13 @@ export default {
     displayBalance: balance => toCKB(balance).split('.'),
     async loadBalance(address = this.address) {
       console.log('loading balance of ', address)
-      this.$store.dispatch('account/LOAD_BALANCE', address)
+      address && this.$store.dispatch('account/LOAD_BALANCE', address)
     }
   },
   watch: {
-    async address(address) {
-      await this.loadBalance(address)
+    address(address) {
+      console.log('[MetaCard] address changed: ', address)
+      this.loadBalance(address)
     }
   }
 }
