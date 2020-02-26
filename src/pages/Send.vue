@@ -171,9 +171,8 @@ export default {
       } catch (e) {
         GTM.logEvent({
           category: 'exceptions',
-          action: 'TransferEvent',
           label: 'RPC',
-          value: JSON.stringify(e)
+          action: `${e.toString()} | TX: ${JSON.stringify(e.tx)}`
         })
         this.$q.notify({
           message: e.toString(),

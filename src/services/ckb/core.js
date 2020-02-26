@@ -112,9 +112,14 @@ export const sendTx = async (fromAddress, outputs) => {
   const signedTx = await sign(tx, fromAddress)
   console.log('[sendTx] Signed TX: ', signedTx)
 
-  // const txHash = await ckb.rpc.sendTransaction(signedTx, 'passthrough')
-  const txHash = await ckb.rpc.sendTransaction(signedTx)
-  console.log('[sendTx] TX Hash: ', txHash)
+  let txHash = null
+  try {
+    txHash = await ckb.rpc.sendTransaction(signedTx)
+    console.log('[sendTx] TX Hash: ', txHash)
+  } catch (e) {
+    e.tx = tx
+    throw e
+  }
   // clear local cells when sent
   lastId = cells[cells.length - 1].id
   cells = []

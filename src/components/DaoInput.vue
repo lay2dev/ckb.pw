@@ -14,7 +14,6 @@
         suffix="CKB"
         :hint="`${$t('hint_available')}: ${displayCKB(rawBalance)} CKB`"
         :rules="rules('amount')"
-        @focus="selectInput"
         @input="validate"
       />
     </q-card-section>

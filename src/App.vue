@@ -23,6 +23,9 @@ export default {
     // init pw
     await initPW(CKB_NODE)
 
+    // detecting locale
+    this.$i18n.locale = this.$q.lang.getLocale()
+
     // Moment
     moment.updateLocale('en', momentConfig)
 

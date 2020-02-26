@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import axios from 'axios'
 import GTM from '../components/gtm'
 import { Notify } from 'quasar'
@@ -30,10 +29,9 @@ export const get = async (url, params) => {
     ret = await axios.get(url)
   } catch (e) {
     GTM.logEvent({
-      'category': 'exceptions',
-      'action': url.split('/').pop(),
-      'label': 'API',
-      'value': 'error: ' + e.toString() + 'params: ' + JSON.stringify(params)
+      category: 'exceptions',
+      action: `Error: ${e.toString()} | Params: ${JSON.stringify(params)}`,
+      label: '[API] - ' + url.split('/').pop()
     })
     Notify.create({
       message: '[API] - ' + e.toString(),

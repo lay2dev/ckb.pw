@@ -76,6 +76,7 @@ import DaoInput from '../components/DaoInput'
 import DaoItem from '../components/DaoItem'
 import api from '../services/api'
 import { setFeeRate } from '../services/ckb/core'
+import GTM from '../components/gtm'
 
 export default {
   name: 'Dao',
@@ -133,9 +134,21 @@ export default {
       try {
         const txHash = await deposit(this.address, this.amount)
         if (txHash) {
+          const gtmEvent = {
+            category: 'conversions',
+            action: 'DaoDepositEvent',
+            label: this.address,
+            value: Number(this.amount)
+          }
+          GTM.logEvent(gtmEvent)
           this.sent = true
         }
       } catch (e) {
+        GTM.logEvent({
+          category: 'exceptions',
+          label: 'RPC',
+          action: `${e.toString()} | TX: ${JSON.stringify(e.tx)}`
+        })
         this.$q.notify({
           message: e.toString(),
           position: 'top',
@@ -152,6 +165,7 @@ export default {
       this.init(address)
     },
     async amount(amount) {
+      if (Number(amount) < 102) return
       this.loadingUnSpent = true
       try {
         this.fee = await calcFee(this.address, amount, { type: 'deposit' })
