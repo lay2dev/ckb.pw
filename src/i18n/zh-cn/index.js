@@ -27,7 +27,7 @@ export default {
   label_remaining: '余额',
   label_fee: '手续费',
   label_fee_rate: '费率',
-  label_min_amount: '最小金额',
+  label_min_amount: '最小转账金额',
   label_loading: '加载中..',
   label_tx_all: '总览',
   label_tx_in: '收入',
@@ -59,7 +59,7 @@ export default {
   msg_invalid_address: '无效地址',
   msg_min_fee_rate: `最低费率为 ${MIN_FEE_RATE} Shannons / KB`,
   msg_only_integer: `金额必须为整数`,
-  msg_broke: `余额不足`,
+  msg_broke: `余额不能低于 61 CKB`,
   msg_confirm_delete: '确认删除 ?',
   msg_copy_success: '已复制 !'
 }

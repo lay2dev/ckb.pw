@@ -167,7 +167,7 @@ export const toCKB = (capacity, options = {}) => {
 
 export const fromCKB = capacity => {
   capacity === '' && (capacity = 0)
-  var cap = BigInt(capacity).toString()
+  var cap = Number(capacity).toFixed(8)
   const base = BigInt(ckbBase)
   const baseLength = ckbBase.length - 1
 

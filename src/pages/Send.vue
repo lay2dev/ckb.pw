@@ -4,6 +4,7 @@
       ref="outputs_form"
       :outputs="outputs"
       :outputsReady.sync="outputsReady"
+      :broke="broke"
     />
     <q-card>
       <q-card-section class="row">
@@ -126,7 +127,7 @@ export default {
   async mounted() {
     // load some cells in advance
     this.address && reloadCells(this.address, PRELOAD_AMOUNT)
-    this.outputs.push({})
+    this.outputs.push({ address: null, amount: 0 })
     this.$store.dispatch('account/LOAD_BALANCE')
     this.feeRate = await api.getFeeRate()
   },
@@ -149,7 +150,6 @@ export default {
   },
   methods: {
     resetTXs() {
-      this.outputs = [{}]
       this.fee = 0
       this.$refs.outputs_form.resetOutputs()
     },
@@ -192,14 +192,8 @@ export default {
       this.getFee(amount)
     },
     remaining(remaining) {
-      if (cmpAmount(remaining, 0) === 'lt') {
+      if (cmpAmount(remaining, fromCKB(61)) === 'lt') {
         this.broke = true
-        this.$q.notify({
-          message: this.$t('msg_broke'),
-          color: 'negative',
-          position: 'center',
-          timeout: 1500
-        })
       } else {
         this.broke = false
       }
