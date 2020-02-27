@@ -96,8 +96,17 @@ import api from '../services/api'
 import { mapGetters } from 'vuex'
 import { toCKB, fromCKB } from '../services/ckb/utils'
 import { sumAmount, subAmount, cmpAmount } from '../services/utils'
-import { calcFee, sendTx, setFeeRate, MIN_FEE_RATE } from '../services/ckb/core'
+import {
+  calcFee,
+  sendTx,
+  setFeeRate,
+  reloadCells,
+  MIN_FEE_RATE
+} from '../services/ckb/core'
 import GTM from '../components/gtm'
+
+const PRELOAD_AMOUNT = 10000
+
 export default {
   name: 'Send',
   components: { 'outputs-form': OutputsForm, 'fee-rate': FeeRate },
@@ -115,6 +124,8 @@ export default {
     }
   },
   async mounted() {
+    // load some cells in advance
+    this.address && reloadCells(this.address, PRELOAD_AMOUNT)
     this.outputs.push({})
     this.$store.dispatch('account/LOAD_BALANCE')
     this.feeRate = await api.getFeeRate()
@@ -171,8 +182,10 @@ export default {
     }
   },
   watch: {
-    address() {
+    address(address) {
       this.$store.dispatch('account/LOAD_BALANCE')
+      // load some cells in advance
+      reloadCells(address, PRELOAD_AMOUNT)
     },
     sendAmount(amount) {
       if (!this.outputsReady) return

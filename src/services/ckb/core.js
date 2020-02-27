@@ -249,7 +249,7 @@ async function sign(rawTx, fromAddress) {
   return tx
 }
 
-async function reloadCells(address, needed) {
+export const reloadCells = async (address, needed) => {
   needed = fromCKB(needed)
   const lockHash = ckbUtils.scriptToHash(getLockScriptFromAddress(address))
   console.log('[reloadCells] cells begin', cells)
