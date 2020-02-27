@@ -71,10 +71,10 @@ export default {
       let txHash = ''
       if (this.item.type === 'deposit') {
         txHash = await settle(this.item, this.address)
+        console.log('[DAOItem] settle tx sent: ', txHash)
       } else if (this.item.type === 'withdraw') {
         // txHash await DAO.withdraw2()
       }
-      console.log('[DAO] Withdraw 1 tx sent: ', txHash)
       this.sending = false
     }
   }

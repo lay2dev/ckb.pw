@@ -131,31 +131,16 @@ export default {
     },
     async lockIt() {
       this.sending = true
-      try {
-        const txHash = await deposit(this.address, this.amount)
-        if (txHash) {
-          const gtmEvent = {
-            category: 'conversions',
-            action: 'DaoDepositEvent',
-            label: this.address,
-            value: Number(this.amount)
-          }
-          GTM.logEvent(gtmEvent)
-          this.sent = true
+      const txHash = await deposit(this.address, this.amount)
+      if (txHash) {
+        const gtmEvent = {
+          category: 'conversions',
+          action: 'DaoDepositEvent',
+          label: this.address,
+          value: Number(this.amount)
         }
-      } catch (e) {
-        GTM.logEvent({
-          category: 'exceptions',
-          label: 'RPC',
-          action: `${e.toString()} | TX: ${JSON.stringify(e.tx)}`
-        })
-        this.$q.notify({
-          message: e.toString(),
-          position: 'top',
-          timeout: 2000,
-          color: 'negative'
-        })
-        console.log(e)
+        GTM.logEvent(gtmEvent)
+        this.sent = true
       }
       this.sending = false
     }

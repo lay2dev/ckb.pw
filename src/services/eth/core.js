@@ -139,11 +139,6 @@ const buildTypedData = (inputCapacity, outputs, messageHash) => {
   })
 
   typedData.message['input-sum'] = toCKB(inputCapacity, { pad: true }) + 'CKB'
-  console.log(
-    '[buildTypedData] inputCapacity, outputCapacity',
-    inputCapacity,
-    outputCapacity.toString()
-  )
   typedData.message.fee =
     toCKB(JSBI.subtract(BigInt(inputCapacity), outputCapacity).toString(), {
       pad: true

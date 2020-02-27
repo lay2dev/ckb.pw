@@ -1,6 +1,8 @@
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import * as ckbUtils from '@nervosnetwork/ckb-sdk-utils'
+import { Notify } from 'quasar'
 import api from '../api'
+import GTM from '../../components/gtm'
 import {
   txBuilder,
   depositTxBuilder,
@@ -87,6 +89,7 @@ export const calcFee = async (address, amount, extra) => {
       tx = depositTxBuilder(address, amount, cells)
       break
     case 'settle':
+      extra.data.changeCell = cells[0]
       tx = settleTxBuilder(address, extra.data)
       break
     case 'claim':
@@ -112,14 +115,9 @@ export const sendTx = async (fromAddress, outputs) => {
   const signedTx = await sign(tx, fromAddress)
   console.log('[sendTx] Signed TX: ', signedTx)
 
-  let txHash = null
-  try {
-    txHash = await ckb.rpc.sendTransaction(signedTx)
-    console.log('[sendTx] TX Hash: ', txHash)
-  } catch (e) {
-    e.tx = tx
-    throw e
-  }
+  const txHash = await ckbSend(signedTx)
+  console.log('[sendTx] TX Hash: ', txHash)
+
   // clear local cells when sent
   lastId = cells[cells.length - 1].id
   cells = []
@@ -133,14 +131,14 @@ export const deposit = async (fromAddress, amount) => {
   const signedTx = await sign(depositTx, fromAddress)
   console.log('[deposit] signed tx', signedTx)
 
-  const txHash = await ckb.rpc.sendTransaction(signedTx)
+  const txHash = await ckbSend(signedTx)
   // clear local cells when sent
   lastId = cells[cells.length - 1].id
   cells = []
   return txHash
 }
 
-export const settle = async (fromAddress, daoItem) => {
+export const settle = async (daoItem, fromAddress) => {
   let outputCell = {
     capacity: numberToHexString(daoItem.size),
     lock: getLockScriptFromAddress(fromAddress),
@@ -159,14 +157,14 @@ export const settle = async (fromAddress, daoItem) => {
       outputCell
     }
   }
-  const fee = await calcFee(fromAddress, fromCKB(62), extra)
+  const fee = await calcFee(fromAddress, 62, extra)
   const settleTx = settleTxBuilder(fromAddress, extra.data, fee)
 
   outputCell = { ...outputCell, outPoint: depositOutPoint }
   cells.push(outputCell)
   const signedTx = await sign(settleTx, fromAddress)
 
-  const txHash = await ckb.rpc.sendTransaction(signedTx)
+  const txHash = await ckbSend(signedTx)
   // clear local cells when sent
   lastId = cells[cells.length - 1].id
   cells = []
@@ -274,4 +272,27 @@ function getInputCapacity(inputs) {
   const cellMatch = input =>
     cells.find(c => cellId(c.outPoint) === cellId(input.previousOutput))
   return inputs.map(i => cellMatch(i).capacity).reduce(sumAmount)
+}
+
+async function ckbSend(tx) {
+  try {
+    const txHash = await ckb.rpc.sendTransaction(tx)
+    return txHash
+  } catch (e) {
+    Notify.create({
+      message: e.toString(),
+      position: 'top',
+      timeout: 2000,
+      color: 'negative'
+    })
+
+    GTM.logEvent({
+      category: 'exceptions',
+      label: 'RPC',
+      action: `Time: ${new Date().toLocaleString()} 
+        | ${e.toString()} 
+        | TX: ${JSON.stringify(tx)} 
+        | UA: ${navigator.userAgent}`
+    })
+  }
 }

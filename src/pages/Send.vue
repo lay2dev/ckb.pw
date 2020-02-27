@@ -156,30 +156,16 @@ export default {
     },
     async send() {
       this.sending = true
-      try {
-        const txHash = await sendTx(this.address, this.outputs)
-        if (txHash) {
-          const gtmEvent = {
-            category: 'conversions',
-            action: 'TransferEvent',
-            label: this.address,
-            value: Number(this.sendAmount)
-          }
-          GTM.logEvent(gtmEvent)
-          this.sent = true
+      const txHash = await sendTx(this.address, this.outputs)
+      if (txHash) {
+        const gtmEvent = {
+          category: 'conversions',
+          action: 'TransferEvent',
+          label: this.address,
+          value: Number(this.sendAmount)
         }
-      } catch (e) {
-        GTM.logEvent({
-          category: 'exceptions',
-          label: 'RPC',
-          action: `${e.toString()} | TX: ${JSON.stringify(e.tx)}`
-        })
-        this.$q.notify({
-          message: e.toString(),
-          position: 'top',
-          timeout: 2000,
-          color: 'negative'
-        })
+        GTM.logEvent(gtmEvent)
+        this.sent = true
       }
       this.sending = false
     }
