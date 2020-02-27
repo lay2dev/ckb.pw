@@ -85,7 +85,8 @@ export const settleTxBuilder = (
   fee = '0x0'
 ) => {
   const encodedBlockNumber = toHexInLittleEndian(
-    numberToHexString(depositHeader.number)
+    numberToHexString(depositHeader.number),
+    8
   )
   const dummyAddress = dummyCKBAddresses[ckb.pw.chain]
   const txParams = {
