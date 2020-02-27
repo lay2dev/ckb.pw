@@ -130,6 +130,7 @@ export default {
     this.outputs.push({ address: null, amount: 0 })
     this.$store.dispatch('account/LOAD_BALANCE')
     this.feeRate = await api.getFeeRate()
+    this.resetTXs()
   },
   computed: {
     ...mapGetters('account', {

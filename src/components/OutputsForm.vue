@@ -151,8 +151,9 @@ export default {
       ckbAddress && (address = ckbAddress[0])
 
       console.log('address:', address)
-      let output = { ...this.outputs[index], address }
-      this.$set(this.outputs, index, output)
+      // let output = { ...this.outputs[index], address }
+      // this.$set(this.outputs, index, output)
+      this.outputs[index].address = address
     },
     async addOutput() {
       this.outputs.push({ address: null, amount: 0 })
