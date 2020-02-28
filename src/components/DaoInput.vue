@@ -1,36 +1,64 @@
 <template>
   <q-card square>
     <q-card-section>
-      <p>{{ $t('hint_dao_deposit') }}</p>
-      <q-input
-        type="number"
-        standout
-        class="amount-text"
+      <q-field
+        class="q-mt-md amount-text"
+        filled
         clearable
         clear-icon="close"
         no-error-icon
-        debounce="500"
-        v-model="_amount"
-        suffix="CKB"
-        :hint="`${$t('hint_available')}: ${displayCKB(rawBalance)} CKB`"
-        :rules="rules('amount')"
-        @input="validate"
-      />
+        v-model.trim.lazy="$v._amount.$model"
+        bottom-slots
+        :error="$v._amount.$error"
+        @clear="$v._amount.$model = 0"
+      >
+        <template v-slot:hint>
+          <div>
+            {{ `${$t('hint_available')}: ${displayCKB(rawBalance)} CKB` }}
+          </div>
+        </template>
+        <template v-slot:error>
+          <div v-if="!$v._amount.minCapacity">
+            {{ $t('msg_dao_min_amount') }}
+          </div>
+          <div v-if="!$v._amount.enoughBalance">
+            {{ $t('msg_broke') }}
+          </div>
+        </template>
+        <template v-slot:control="{ floatingLabel, value, emitValue }">
+          <money
+            class="q-field__input text-right"
+            :value="value"
+            @input="emitValue"
+            v-bind="money"
+            v-show="floatingLabel"
+          />
+        </template>
+      </q-field>
     </q-card-section>
   </q-card>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import { JSBI, toCKB } from '../services/ckb/utils'
+import { sleep } from '../services/utils'
+import { toCKB } from '../services/ckb/utils'
+import { Money } from 'v-money'
+import { minDaoCapacity, enoughBalance } from '../services/validation'
 
 const MIN_DAO_AMOUNT = 102
 
 export default {
   name: 'DaoInput',
   props: ['amount', 'ready'],
+  components: { Money },
   data() {
     return {
+      money: {
+        precision: 0,
+        thousands: ',',
+        suffix: ' CKB'
+      },
       MIN_DAO_AMOUNT: MIN_DAO_AMOUNT
     }
   },
@@ -46,32 +74,37 @@ export default {
         if (val == null) val = 0
         this.$emit('update:amount', val)
       }
+    },
+    _ready() {
+      return !this.$v.$invalid
     }
   },
+  mounted() {
+    this.$nextTick(() => {
+      this.$v.$reset()
+    })
+  },
   methods: {
-    rules() {
-      const rule_not_empty = val => !!val || this.$t('msg_field_required')
-      const rule_min_amount = val =>
-        JSBI.GE(JSBI.BigInt(val), JSBI.BigInt(MIN_DAO_AMOUNT)) ||
-        this.$t('label_min_amount') + ': ' + MIN_DAO_AMOUNT + ' CKB'
-      const rule_is_integer = val =>
-        !/[\D]/.test(val) || this.$t('msg_only_integer')
-      return [rule_not_empty, rule_min_amount, rule_is_integer]
-    },
     displayCKB(amount) {
       return toCKB(amount)
+    }
+  },
+  watch: {
+    _ready(ready) {
+      this.$emit('update:ready', ready)
+      console.log('[DaoInput] ready', ready)
     },
-    validate(amount) {
-      for (let rule of this.rules()) {
-        if (typeof rule(amount) === 'string') {
-          this.$emit('update:ready', false)
-          return
-        }
+    async _amount(amount) {
+      if (!amount) {
+        await sleep(10)
+        this.$v.$reset()
       }
-      this.$emit('update:ready', true)
-    },
-    selectInput(e) {
-      e.srcElement.select()
+    }
+  },
+  validations: {
+    _amount: {
+      minDaoCapacity,
+      enoughBalance
     }
   }
 }

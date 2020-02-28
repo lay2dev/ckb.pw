@@ -37,7 +37,12 @@
           </div>
         </q-card-section>
         <q-list>
-          <dao-item v-for="item in list" :item="item" :key="item.hash" />
+          <dao-item
+            v-for="item in list"
+            :item="item"
+            :sent.sync="sent"
+            :key="item.hash"
+          />
         </q-list>
       </q-card>
       <q-dialog v-model="sent" persistent>

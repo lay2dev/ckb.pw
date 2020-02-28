@@ -40,14 +40,14 @@
 import { mapGetters } from 'vuex'
 import { toCKB } from '../services/ckb/utils'
 import { displayDateTime } from '../services/utils'
-import { settle } from '../services/ckb/core'
+import { settle, claim } from '../services/ckb/core'
+import GTM from '../components/gtm'
 export default {
   name: 'DaoItem',
-  props: ['item'],
+  props: ['item', 'sent'],
   data() {
     return {
-      sending: false,
-      sent: false
+      sending: false
     }
   },
   computed: {
@@ -67,13 +67,24 @@ export default {
     },
     displayDateTime: displayDateTime,
     async withdraw() {
-      this.sending = true
-      let txHash = ''
       if (this.item.type === 'deposit') {
-        txHash = await settle(this.item, this.address)
+        this.sending = true
+        const txHash = await settle(this.item, this.address)
+        if (txHash) {
+          const gtmEvent = {
+            category: 'conversions',
+            action: 'DaoSettleEvent',
+            label: this.address,
+            value: Number(this.item.size)
+          }
+          GTM.logEvent(gtmEvent)
+          this.$emit('update:sent', true)
+        }
+        this.sending = false
         console.log('[DAOItem] settle tx sent: ', txHash)
       } else if (this.item.type === 'withdraw') {
-        // txHash await DAO.withdraw2()
+        const txHash = await claim(this.item, this.address)
+        console.log('[DAOItem] settle tx sent: ', txHash)
       }
       this.sending = false
     }

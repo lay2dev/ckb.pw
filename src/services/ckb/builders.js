@@ -53,14 +53,11 @@ export const txBuilder = (fromAddress, cells, outputs, fee = '0x0') => {
 }
 
 export const depositTxBuilder = (fromAddress, amount, cells, fee = '0x0') => {
-  typeof amount === 'string' && (amount = BigInt(fromCKB(amount)))
-  typeof fee === 'string' && (fee = BigInt(fee))
   const dummyAddress = dummyCKBAddresses[ckb.pw.chain]
-
   const txParams = {
     fromAddress: dummyAddress,
     toAddress: dummyAddress,
-    capacity: numberToHexString(amount),
+    capacity: numberToHexString(fromCKB(amount)),
     fee: numberToHexString(fee),
     cells,
     deps: ckb.config.secp256k1Dep
