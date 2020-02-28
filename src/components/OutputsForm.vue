@@ -2,7 +2,7 @@
   <q-form ref="form" no-error-focus>
     <q-list bordered separator>
       <q-item
-        class="q-pa-sm"
+        class="q-pa-sm bg-white"
         v-for="(v, index) in $v.outputs.$each.$iter"
         :key="index"
       >

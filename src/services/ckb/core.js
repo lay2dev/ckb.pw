@@ -27,6 +27,7 @@ export var ckb
 
 var cells = []
 var lastId = 0
+var noMoreCells = false
 var lastSize = 0
 var feeRate = MIN_FEE_RATE
 var platform = {
@@ -34,6 +35,8 @@ var platform = {
   chain: null,
   typedData: false
 }
+
+const PRELOAD_AMOUNT = 10000
 
 export const initPW = async nodeUrl => {
   ckb = new CKBCore(nodeUrl)
@@ -80,6 +83,7 @@ export const setPlatform = ({ provider, chain }) => {
  * getters
  **/
 export const getFeeRate = () => feeRate
+export const isNoMoreCells = () => noMoreCells
 export const calcFee = async (address, amount, extra) => {
   console.log('[calcFee] amount:', amount)
   await reloadCells(address, amount)
@@ -118,9 +122,9 @@ export const sendTx = async (fromAddress, outputs) => {
   const txHash = await ckbSend(signedTx)
   console.log('[sendTx] TX Hash: ', txHash)
 
-  // clear local cells when sent
-  lastId = cells[cells.length - 1].id
-  cells = []
+  // pre-load some new cells
+  reloadCells(fromAddress)
+
   return txHash
 }
 
@@ -128,13 +132,15 @@ export const deposit = async (fromAddress, amount) => {
   const fee = await calcFee(fromAddress, amount, { type: 'deposit' })
   const depositTx = depositTxBuilder(fromAddress, amount, cells, fee)
   console.log('[deposit] deposit tx', depositTx)
+
   const signedTx = await sign(depositTx, fromAddress)
   console.log('[deposit] signed tx', signedTx)
 
   const txHash = await ckbSend(signedTx)
-  // clear local cells when sent
-  lastId = cells[cells.length - 1].id
-  cells = []
+
+  // pre-load some new cells
+  reloadCells(fromAddress)
+
   return txHash
 }
 
@@ -165,9 +171,9 @@ export const settle = async (daoItem, fromAddress) => {
   const signedTx = await sign(settleTx, fromAddress)
 
   const txHash = await ckbSend(signedTx)
-  // clear local cells when sent
-  lastId = cells[cells.length - 1].id
-  cells = []
+
+  // pre-load some new cells
+  reloadCells(fromAddress)
   return txHash
 }
 
@@ -249,34 +255,57 @@ async function sign(rawTx, fromAddress) {
   return tx
 }
 
-export const reloadCells = async (address, needed) => {
+export const reloadCells = async (address, needed = PRELOAD_AMOUNT) => {
   needed = fromCKB(needed)
   const lockHash = ckbUtils.scriptToHash(getLockScriptFromAddress(address))
   console.log('[reloadCells] cells begin', cells)
+
   if (cells.length) {
     const local = cells.map(c => c.capacity).reduce(sumAmount)
     console.log('[reloadCells] local, needed:', local, needed)
+
     if (cmpAmount(local, needed) === 'lt') {
-      // lastId = cells[cells.length - 1].id
       needed = JSBI.subtract(BigInt(needed), BigInt(local)).toString()
       console.log('[reloadCells] new needed', needed)
     } else return
   }
 
-  cells = await api.getUnspentCells(lockHash, needed, lastId)
+  const newCells = await api.getUnspentCells(lockHash, needed, lastId)
+
+  if (newCells.length) {
+    lastId = newCells[newCells.length - 1].id
+    cells = [...cells, ...newCells]
+
+    const local = cells.map(c => c.capacity).reduce(sumAmount)
+    if (cmpAmount(local, needed) === 'lt') {
+      noMoreCells = true
+      console.log('[reloadCells] no more capacity than ', local)
+    } else {
+      noMoreCells = false
+    }
+  } else {
+    noMoreCells = true
+    console.log('[reloadCells] no more cells')
+  }
   console.log('[reloadCells] cells end', cells)
 }
 
+const cellId = ({ txHash, index }) => `${txHash}+${index}`
+const cellMatch = input =>
+  cells.find(c => cellId(c.outPoint) === cellId(input.previousOutput))
+
 function getInputCapacity(inputs) {
-  const cellId = ({ txHash, index }) => `${txHash}+${index}`
-  const cellMatch = input =>
-    cells.find(c => cellId(c.outPoint) === cellId(input.previousOutput))
   return inputs.map(i => cellMatch(i).capacity).reduce(sumAmount)
+}
+
+function recycleCells(inputs) {
+  cells = inputs.filter(i => !cellMatch(i))
 }
 
 async function ckbSend(tx) {
   try {
     const txHash = await ckb.rpc.sendTransaction(tx)
+    recycleCells(tx.inputs)
     return txHash
   } catch (e) {
     Notify.create({

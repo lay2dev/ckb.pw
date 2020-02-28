@@ -7,7 +7,7 @@ export const verifyAddress = address => {
   if (typeof address !== 'string') return null
 
   // check if is eth address
-  if (web3Utils.isAddress(address)) return 'eth'
+  if (address.startsWith('0x') && web3Utils.isAddress(address)) return 'eth'
 
   console.log('not eth address')
   let maybe = null

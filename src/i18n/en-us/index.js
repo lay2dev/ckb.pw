@@ -61,5 +61,7 @@ export default {
   msg_only_integer: `Amount must be integer`,
   msg_broke: `Remaining can't be less than 61 CKB `,
   msg_confirm_delete: 'Proceed Deleting ?',
-  msg_copy_success: 'Copied to Clipboard!'
+  msg_copy_success: 'Copied to Clipboard!',
+  msg_no_more_cells:
+    'No more live cells, please try again after the last transaction is confirmed.'
 }

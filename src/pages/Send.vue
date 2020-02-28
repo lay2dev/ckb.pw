@@ -54,7 +54,7 @@
           color="primary"
           :label="$t('btn_send')"
           :loading="sending || loadingUnSpent"
-          :disable="!outputsReady || broke || loadingUnSpent || sending"
+          :disable="!outputsReady || broke || loadingUnSpent || sending || !fee"
           @click="send"
         >
           <template v-slot:loading>
@@ -102,11 +102,10 @@ import {
   sendTx,
   setFeeRate,
   reloadCells,
-  MIN_FEE_RATE
+  MIN_FEE_RATE,
+  isNoMoreCells
 } from '../services/ckb/core'
 import GTM from '../components/gtm'
-
-const PRELOAD_AMOUNT = 10000
 
 export default {
   name: 'Send',
@@ -126,7 +125,7 @@ export default {
   },
   async mounted() {
     // load some cells in advance
-    this.address && reloadCells(this.address, PRELOAD_AMOUNT)
+    this.address && reloadCells(this.address)
     this.outputs.push({ address: null, amount: 0 })
     this.$store.dispatch('account/LOAD_BALANCE')
     this.feeRate = await api.getFeeRate()
@@ -163,6 +162,17 @@ export default {
         this.fee = await calcFee(this.address, amount, { data: this.outputs })
       } catch (e) {
         console.log(e.toString())
+        if (
+          isNoMoreCells() &&
+          e.toString().includes('Input capacity is not enough')
+        ) {
+          this.$q.notify({
+            type: 'warning',
+            message: this.$t('msg_no_more_cells'),
+            position: 'center',
+            timeout: 4000
+          })
+        }
       }
       this.loadingUnSpent = false
     },
@@ -186,7 +196,7 @@ export default {
     address(address) {
       this.$store.dispatch('account/LOAD_BALANCE')
       // load some cells in advance
-      reloadCells(address, PRELOAD_AMOUNT)
+      reloadCells(address)
     },
     sendAmount(amount) {
       if (!this.outputsReady) return
