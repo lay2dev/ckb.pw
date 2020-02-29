@@ -93,7 +93,7 @@ export const calcFee = async (address, amount, extra) => {
       tx = depositTxBuilder(address, amount, cells)
       break
     case 'settle':
-      extra.data.changeCell = cells[0]
+      extra.data.feeCell = cells[0]
       tx = settleTxBuilder(address, extra.data)
       break
     case 'claim':
@@ -157,7 +157,6 @@ export const settle = async (daoItem, fromAddress) => {
   const extra = {
     type: 'settle',
     data: {
-      changeCell: cells[0],
       depositHeader: daoItem.depositBlockHeader,
       depositOutPoint,
       outputCell
@@ -168,8 +167,8 @@ export const settle = async (daoItem, fromAddress) => {
 
   outputCell = { ...outputCell, outPoint: depositOutPoint }
   cells.push(outputCell)
-  const signedTx = await sign(settleTx, fromAddress)
 
+  const signedTx = await sign(settleTx, fromAddress)
   const txHash = await ckbSend(signedTx)
 
   // pre-load some new cells
@@ -177,7 +176,48 @@ export const settle = async (daoItem, fromAddress) => {
   return txHash
 }
 
-export const claim = () => {}
+export const claim = async (daoItem, fromAddress) => {
+  const {
+    depositBlockHeader: depositHeader,
+    withdrawBlockHeader: settleHeader,
+    hash,
+    idx,
+    countedCapacity
+  } = daoItem
+
+  const settleOutPoint = { txHash: hash, index: numberToHexString(idx) }
+  const claimerLockScript = getLockScriptFromAddress(fromAddress)
+  const claimedCapacity = numberToHexString(countedCapacity)
+
+  const txParams = {
+    depositHeader,
+    settleHeader,
+    settleOutPoint,
+    claimerLockScript,
+    claimedCapacity
+  }
+  const extra = {
+    type: 'claim',
+    data: txParams
+  }
+  const fee = await calcFee(fromAddress, 0, extra)
+  const claimTx = claimTxBuilder(extra.data, fee)
+  console.log('[clam tx]', claimTx)
+
+  const settleCell = {
+    capacity: numberToHexString(claimedCapacity),
+    lock: getLockScriptFromAddress(fromAddress),
+    type: getDaoTypeScript(),
+    outPoint: settleOutPoint
+  }
+
+  cells = [settleCell]
+
+  const signedTx = await sign(claimTx, fromAddress)
+  const txHash = await ckbSend(signedTx)
+
+  return txHash
+}
 
 async function sign(rawTx, fromAddress) {
   const {

@@ -2,7 +2,8 @@ import axios from 'axios'
 import GTM from '../components/gtm'
 import { Notify } from 'quasar'
 
-const BASE_URL = 'https://api.ckb.pw/'
+const BASE_URL = 'http://39.99.211.143:3000/'
+// const BASE_URL = 'https://api.ckb.pw/'
 // const BASE_URL = 'http://192.168.1.137:3000/'
 
 export const API = {

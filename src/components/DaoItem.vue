@@ -67,24 +67,33 @@ export default {
     },
     displayDateTime: displayDateTime,
     async withdraw() {
+      this.sending = true
       if (this.item.type === 'deposit') {
-        this.sending = true
         const txHash = await settle(this.item, this.address)
         if (txHash) {
           const gtmEvent = {
             category: 'conversions',
             action: 'DaoSettleEvent',
             label: this.address,
-            value: Number(this.item.size)
+            value: Number(this.item.countedCapacity)
           }
           GTM.logEvent(gtmEvent)
           this.$emit('update:sent', true)
         }
-        this.sending = false
         console.log('[DAOItem] settle tx sent: ', txHash)
       } else if (this.item.type === 'withdraw') {
         const txHash = await claim(this.item, this.address)
-        console.log('[DAOItem] settle tx sent: ', txHash)
+        if (txHash) {
+          const gtmEvent = {
+            category: 'conversions',
+            action: 'DaoClaimEvent',
+            label: this.address,
+            value: Number(this.item.countedCapacity)
+          }
+          GTM.logEvent(gtmEvent)
+          this.$emit('update:sent', true)
+          console.log('[DAOItem] claim tx sent: ', txHash)
+        }
       }
       this.sending = false
     }

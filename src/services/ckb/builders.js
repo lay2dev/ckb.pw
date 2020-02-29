@@ -13,7 +13,8 @@ import {
 
 const dummyCKBAddresses = {
   main: 'ckb1qyqy5vmywpty6p72wpvm0xqys8pdtxqf6cmsr8p2l0',
-  ckb_testnet: 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
+  ckb_testnet: 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2',
+  ckb_dev: 'ckt1qyqwknsshmvnj8tj6wnaua53adc0f8jtrrzqz4xcu2'
 }
 
 export const txBuilder = (fromAddress, cells, outputs, fee = '0x0') => {
@@ -78,7 +79,7 @@ export const depositTxBuilder = (fromAddress, amount, cells, fee = '0x0') => {
 // settlement tx for withdraw phase 1
 export const settleTxBuilder = (
   fromAddress,
-  { changeCell, depositHeader, depositOutPoint, outputCell },
+  { feeCell, depositHeader, depositOutPoint, outputCell },
   fee = '0x0'
 ) => {
   const encodedBlockNumber = toHexInLittleEndian(
@@ -93,7 +94,7 @@ export const settleTxBuilder = (
     fee: numberToHexString(fee),
     deps: ckb.config.secp256k1Dep,
     capacityThreshold: '0x0',
-    cells: [changeCell]
+    cells: [feeCell]
   }
   const settleTx = ckb.generateRawTransaction(txParams)
 
