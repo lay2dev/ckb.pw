@@ -182,6 +182,7 @@ export const claim = async (daoItem, fromAddress) => {
     withdrawBlockHeader: settleHeader,
     hash,
     idx,
+    size: capacity,
     countedCapacity
   } = daoItem
 
@@ -205,7 +206,7 @@ export const claim = async (daoItem, fromAddress) => {
   console.log('[clam tx]', claimTx)
 
   const settleCell = {
-    capacity: numberToHexString(claimedCapacity),
+    capacity: numberToHexString(capacity),
     lock: getLockScriptFromAddress(fromAddress),
     type: getDaoTypeScript(),
     outPoint: settleOutPoint
