@@ -1,12 +1,13 @@
 import api from '../../services/api'
-import { getLockHash } from '../../services/chain'
+import { getLockScriptFromAddress } from '../../services/ckb/utils'
+import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
 
 export async function LOAD_UNSPENT_CELLS(
   { commit },
   { address, capacity, lastId }
 ) {
   commit('LOADING_UNSPENT')
-  const lockHash = getLockHash(address)
+  const lockHash = scriptToHash(getLockScriptFromAddress(address))
   const cells = await api.getUnspentCells(lockHash, capacity, lastId)
   console.log('unspent cells', cells)
   commit('SET_UNSPENT', cells)

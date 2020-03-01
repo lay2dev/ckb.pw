@@ -4,10 +4,10 @@ export default function() {
     loadingTXs: false,
     noMoreTXs: false,
     platform: '',
-    address: '-',
+    address: '',
     alias: '',
     capacity: {
-      total: '-',
+      total: '0',
       occupied: '1234'
     },
     txs: []

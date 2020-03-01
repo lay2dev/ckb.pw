@@ -77,7 +77,7 @@
 
 <script>
 import { openURL } from 'quasar'
-import { toCKB, displayLongAddress } from '../services/utils'
+import { toCKB, truncatedAddress } from '../services/ckb/utils'
 import moment from 'moment'
 export default {
   name: 'TxItem',
@@ -97,7 +97,7 @@ export default {
     checkTX: function({ hash }) {
       openURL(`https://explorer.nervos.org/aggron/transaction/${hash}`)
     },
-    displayAddress: address => displayLongAddress(address),
+    displayAddress: address => truncatedAddress(address),
     displayAmount: amount => toCKB(amount).split('.'),
     displayTime: time => moment(time).fromNow(),
     displayDirection: function(direction) {

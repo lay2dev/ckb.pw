@@ -1,13 +1,16 @@
 import axios from 'axios'
+import GTM from '../components/gtm'
 import { Notify } from 'quasar'
 
-const BASE_URL = 'https://api.ckb.pw/'
+const BASE_URL = process.env.BASE_URL
+// const BASE_URL = 'https://api.ckb.pw/'
 // const BASE_URL = 'http://192.168.1.137:3000/'
 
 export const API = {
   GetUnspentCells: BASE_URL + 'cell/unSpent',
   LoadDaoCell: BASE_URL + 'cell/loadDaoCell',
-  LoadK1: BASE_URL + 'cell/loadSecp256k1Cell',
+  LoadK1Cell: BASE_URL + 'cell/loadSecp256k1Cell',
+  LoadMultiSigCell: BASE_URL + 'cell/loadMultiSigCell',
   GetTxList: BASE_URL + 'cell/txList',
   GetConfig: BASE_URL + 'cell/getConfig',
   GetBalance: BASE_URL + 'cell/getCapacityByLockHash',
@@ -26,6 +29,11 @@ export const get = async (url, params) => {
   try {
     ret = await axios.get(url)
   } catch (e) {
+    GTM.logEvent({
+      category: 'exceptions',
+      action: `Error: ${e.toString()} | Params: ${JSON.stringify(params)}`,
+      label: '[API] - ' + url.split('/').pop()
+    })
     Notify.create({
       message: '[API] - ' + e.toString(),
       position: 'top',
@@ -55,8 +63,12 @@ export default {
     })
     return data
   },
-  loadK1: async () => {
-    const { data } = await get(API.LoadK1)
+  loadK1Cell: async () => {
+    const { data } = await get(API.LoadK1Cell)
+    return data
+  },
+  loadMultiSigCell: async () => {
+    const { data } = await get(API.LoadMultiSigCell)
     return data
   },
   loadDaoCell: async () => {

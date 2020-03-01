@@ -1,4 +1,4 @@
-import { toCKB } from '../../services/utils'
+import { toCKB } from '../../services/ckb/utils'
 export const lockedGetter = state => toCKB(state.locked)
 export const apcGetter = state => state.apc
 export const revenueGetter = state => toCKB(state.revenue)

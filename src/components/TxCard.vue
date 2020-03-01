@@ -29,7 +29,8 @@
 import TxItem from './TxItem'
 import { mapGetters } from 'vuex'
 import api from '../services/api'
-import { getLockHash } from '../services/chain'
+import { getLockScriptFromAddress } from '../services/ckb/utils'
+import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
 const LIMIT = 5
 export default {
   name: 'TxCard',
@@ -47,13 +48,17 @@ export default {
     })
   },
   activated() {
-    this.address !== '-' && this.loadTXs(this.address)
+    this.address.length && this.loadTXs(this.address)
   },
   methods: {
-    async loadTXs(address) {
-      !address && (address = this.address)
+    async loadTXs(address = this.address) {
+      if (!address) return
       this.loading = true
-      const _txs = await api.getTxList(getLockHash(address), null, this.limit)
+      const _txs = await api.getTxList(
+        scriptToHash(getLockScriptFromAddress(address)),
+        null,
+        this.limit
+      )
       this.txs = _txs.slice(0, this.limit)
       this.loading = false
     },

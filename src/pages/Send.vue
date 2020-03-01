@@ -4,6 +4,7 @@
       ref="outputs_form"
       :outputs="outputs"
       :outputsReady.sync="outputsReady"
+      :broke="broke"
     />
     <q-card>
       <q-card-section class="row">
@@ -36,7 +37,7 @@
         </div>
       </q-card-section>
       <q-slide-transition>
-        <fee-rate v-show="showFeeRate" />
+        <fee-rate v-show="showFeeRate" :feeRate.sync="feeRate" />
       </q-slide-transition>
       <q-separator />
       <q-card-actions align="around">
@@ -53,7 +54,7 @@
           color="primary"
           :label="$t('btn_send')"
           :loading="sending || loadingUnSpent"
-          :disable="!outputsReady || broke || loadingUnSpent || sending"
+          :disable="!outputsReady || broke || loadingUnSpent || sending || !fee"
           @click="send"
         >
           <template v-slot:loading>
@@ -92,21 +93,29 @@
 <script>
 import OutputsForm from '../components/OutputsForm'
 import FeeRate from '../components/FeeRate'
+import api from '../services/api'
 import { mapGetters } from 'vuex'
+import { toCKB, fromCKB } from '../services/ckb/utils'
+import { sumAmount, subAmount, cmpAmount } from '../services/utils'
 import {
-  sumAmount,
-  subAmount,
-  cmpAmount,
-  toCKB,
-  fromCKB
-} from '../services/utils'
-import { sendTx, getFee } from '../services/chain'
+  calcFee,
+  sendTx,
+  setFeeRate,
+  reloadCells,
+  MIN_FEE_RATE,
+  isNoMoreCells
+} from '../services/ckb/core'
+import GTM from '../components/gtm'
+
 export default {
   name: 'Send',
   components: { 'outputs-form': OutputsForm, 'fee-rate': FeeRate },
   data() {
     return {
+      feeRate: MIN_FEE_RATE,
+      fee: 0,
       outputs: [],
+      loadingUnSpent: false,
       outputsReady: false,
       broke: false,
       sending: false,
@@ -115,9 +124,12 @@ export default {
     }
   },
   async mounted() {
-    this.outputs.push({})
+    // load some cells in advance
+    this.address && reloadCells(this.address)
+    this.outputs.push({ address: null, amount: 0 })
     this.$store.dispatch('account/LOAD_BALANCE')
-    this.$store.dispatch('chain/LOAD_FEE_RATE')
+    this.feeRate = await api.getFeeRate()
+    this.resetTXs()
   },
   computed: {
     ...mapGetters('account', {
@@ -125,13 +137,6 @@ export default {
       balance: 'balanceGetter',
       loadingBalance: 'loadingBalanceGetter',
       MIN_AMOUNT: 'minAmountGetter'
-    }),
-    ...mapGetters('chain', {
-      feeRate: 'feeRateGetter'
-    }),
-    ...mapGetters('cell', {
-      unSpent: 'unSpentGetter',
-      loadingUnSpent: 'loadingUnSpentGetter'
     }),
     sendAmount() {
       if (!this.outputs.length) return 0
@@ -141,89 +146,77 @@ export default {
     },
     remaining() {
       return subAmount(this.balance, fromCKB(this.sendAmount))
-    },
-    fee() {
-      if (this.outputsReady) {
-        try {
-          const fee = getFee(
-            this.feeRate,
-            this.unSpent.cells,
-            this.outputs.map(({ address, amount }) => {
-              return { address, amount: fromCKB(amount) }
-            }),
-            this.address
-          )
-          console.log('FEE', fee)
-          if (fee) return fee
-        } catch (e) {
-          console.log(e.toString())
-        }
-      }
-      return '0'
     }
   },
   methods: {
     resetTXs() {
-      this.outputs = [{}]
+      this.fee = 0
       this.$refs.outputs_form.resetOutputs()
     },
     displayCKB(val) {
       return toCKB(val).split('.')
     },
+    async getFee(amount) {
+      this.loadingUnSpent = true
+      try {
+        this.fee = await calcFee(this.address, amount, { data: this.outputs })
+      } catch (e) {
+        console.log(e.toString())
+        if (
+          isNoMoreCells() &&
+          e.toString().includes('Input capacity is not enough')
+        ) {
+          this.$q.notify({
+            type: 'warning',
+            message: this.$t('msg_no_more_cells'),
+            position: 'center',
+            timeout: 4000
+          })
+        }
+      }
+      this.loadingUnSpent = false
+    },
     async send() {
       this.sending = true
-      try {
-        const txHash = await sendTx(
-          this.unSpent.cells,
-          this.outputs.map(({ address, amount }) => {
-            return { address, amount: fromCKB(amount) }
-          }),
-          this.fee,
-          this.address
-        )
-        if (txHash) {
-          this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
-            lastId: this.unSpent.lastId
-          })
-          this.sent = true
+      const txHash = await sendTx(this.address, this.outputs)
+      if (txHash) {
+        const gtmEvent = {
+          category: 'conversions',
+          action: 'TransferEvent',
+          label: this.address,
+          value: Number(this.sendAmount)
         }
-      } catch (e) {
-        this.$q.notify({
-          message: e.toString(),
-          position: 'top',
-          timeout: 2000,
-          color: 'negative'
-        })
+        GTM.logEvent(gtmEvent)
+        this.sent = true
       }
       this.sending = false
     }
   },
   watch: {
-    address() {
+    address(address) {
       this.$store.dispatch('account/LOAD_BALANCE')
+      // load some cells in advance
+      reloadCells(address)
     },
-    sendAmount(newVal) {
-      // if (!this.outputsReady) return
-      const needed = fromCKB(newVal)
-      if (cmpAmount(needed, this.unSpent.capacity) === 'gt') {
-        this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
-          address: this.address,
-          capacity: needed,
-          lastId: this.unSpent.lastId
-        })
-      }
+    sendAmount(amount) {
+      if (!this.outputsReady) return
+      this.getFee(amount)
     },
     remaining(remaining) {
-      if (cmpAmount(remaining, 0) === 'lt') {
+      if (cmpAmount(remaining, fromCKB(61)) === 'lt') {
         this.broke = true
-        this.$q.notify({
-          message: this.$t('msg_broke'),
-          color: 'negative',
-          position: 'center',
-          timeout: 1500
-        })
       } else {
         this.broke = false
+      }
+    },
+    feeRate(feeRate) {
+      this.fee = setFeeRate(feeRate)
+    },
+    outputsReady(ready) {
+      if (ready) {
+        this.getFee(this.sendAmount)
+      } else {
+        this.fee = 0
       }
     }
   }

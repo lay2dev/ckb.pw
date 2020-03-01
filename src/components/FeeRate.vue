@@ -44,25 +44,22 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import { MIN_FEE_RATE } from '../services/chain'
+import { MIN_FEE_RATE } from '../services/ckb/core'
 export default {
   name: 'FeeRate',
+  props: ['feeRate'],
   data() {
     return {
       minFeeRate: MIN_FEE_RATE
     }
   },
   computed: {
-    ...mapGetters('chain', {
-      feeRate: 'feeRateGetter'
-    }),
     _feeRate: {
       get: function() {
-        return this.feeRate
+        return Number(this.feeRate)
       },
       set: function(val) {
-        this.$store.commit('chain/UPDATE_FEE_RATE', val)
+        this.$emit('update:feeRate', val)
       }
     }
   }

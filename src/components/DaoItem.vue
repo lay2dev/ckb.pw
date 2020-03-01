@@ -38,15 +38,16 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB, displayDateTime } from '../services/utils'
-import { DAO } from '../services/chain'
+import { toCKB } from '../services/ckb/utils'
+import { displayDateTime } from '../services/utils'
+import { settle, claim } from '../services/ckb/core'
+import GTM from '../components/gtm'
 export default {
   name: 'DaoItem',
-  props: ['item'],
+  props: ['item', 'sent'],
   data() {
     return {
-      sending: false,
-      sent: false
+      sending: false
     }
   },
   computed: {
@@ -67,13 +68,33 @@ export default {
     displayDateTime: displayDateTime,
     async withdraw() {
       this.sending = true
-      let txHash = ''
       if (this.item.type === 'deposit') {
-        txHash = await DAO.withdraw1(this.item, this.address, this.feeRate)
+        const txHash = await settle(this.item, this.address)
+        if (txHash) {
+          const gtmEvent = {
+            category: 'conversions',
+            action: 'DaoSettleEvent',
+            label: this.address,
+            value: Number(this.item.countedCapacity)
+          }
+          GTM.logEvent(gtmEvent)
+          this.$emit('update:sent', true)
+        }
+        console.log('[DAOItem] settle tx sent: ', txHash)
       } else if (this.item.type === 'withdraw') {
-        // txHash await DAO.withdraw2()
+        const txHash = await claim(this.item, this.address)
+        if (txHash) {
+          const gtmEvent = {
+            category: 'conversions',
+            action: 'DaoClaimEvent',
+            label: this.address,
+            value: Number(this.item.countedCapacity)
+          }
+          GTM.logEvent(gtmEvent)
+          this.$emit('update:sent', true)
+          console.log('[DAOItem] claim tx sent: ', txHash)
+        }
       }
-      console.log('[DAO] Withdraw 1 tx sent: ', txHash)
       this.sending = false
     }
   }

@@ -37,7 +37,12 @@
           </div>
         </q-card-section>
         <q-list>
-          <dao-item v-for="item in list" :item="item" :key="item.hash" />
+          <dao-item
+            v-for="item in list"
+            :item="item"
+            :sent.sync="sent"
+            :key="item.hash"
+          />
         </q-list>
       </q-card>
       <q-dialog v-model="sent" persistent>
@@ -70,11 +75,13 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { toCKB, fromCKB } from '../services/utils'
-import api from '../services/api'
-import { DAO } from '../services/chain'
+import { toCKB } from '../services/ckb/utils'
+import { deposit, calcFee } from '../services/ckb/core'
 import DaoInput from '../components/DaoInput'
 import DaoItem from '../components/DaoItem'
+import api from '../services/api'
+import { setFeeRate } from '../services/ckb/core'
+import GTM from '../components/gtm'
 
 export default {
   name: 'Dao',
@@ -82,6 +89,7 @@ export default {
   data() {
     return {
       amount: 0,
+      loadingUnSpent: false,
       ready: false,
       sending: false,
       sent: false
@@ -98,10 +106,6 @@ export default {
     ...mapGetters('account', {
       address: 'addressGetter'
     }),
-    ...mapGetters('cell', {
-      loadingUnSpent: 'loadingUnSpentGetter',
-      unSpent: 'unSpentGetter'
-    }),
     ...mapGetters('chain', {
       feeRate: 'feeRateGetter'
     }),
@@ -113,9 +117,10 @@ export default {
     }
   },
   mounted() {
-    this.$nextTick(() => {
-      this.$store.dispatch('chain/LOAD_FEE_RATE')
-      if (this.address !== '-') {
+    this.$nextTick(async () => {
+      const feeRate = await api.getFeeRate()
+      setFeeRate(feeRate)
+      if (this.address.length) {
         this.$store.dispatch('dao/LOAD_LIST', { address: this.address })
       }
     })
@@ -131,35 +136,18 @@ export default {
     },
     async lockIt() {
       this.sending = true
-      try {
-        const txHash = await DAO.deposit(
-          this.address,
-          this.amount,
-          this.unSpent.cells,
-          this.feeRate
-        )
-        if (txHash) {
-          this.$store.dispatch('cell/CLEAR_UNSPENT_CELLS', {
-            lastId: this.unSpent.lastId
-          })
-          this.sent = true
+      const txHash = await deposit(this.address, this.amount)
+      if (txHash) {
+        const gtmEvent = {
+          category: 'conversions',
+          action: 'DaoDepositEvent',
+          label: this.address,
+          value: Number(this.amount)
         }
-      } catch (e) {
-        this.$q.notify({
-          message: e.toString(),
-          position: 'top',
-          timeout: 2000,
-          color: 'negative'
-        })
-        console.log(e)
+        GTM.logEvent(gtmEvent)
+        this.sent = true
       }
       this.sending = false
-    },
-    async test() {
-      await api.getUnspentCells(
-        '0x787e97af6860c58fcecd12653714330c003f5b960e09f027295a49e3c41d609f',
-        '0xd81215452e'
-      )
     }
   },
   watch: {
@@ -167,11 +155,14 @@ export default {
       this.init(address)
     },
     async amount(amount) {
-      this.$store.dispatch('cell/LOAD_UNSPENT_CELLS', {
-        address: this.address,
-        capacity: fromCKB(amount),
-        lastId: this.unSpent.lastId
-      })
+      if (Number(amount) < 102) return
+      this.loadingUnSpent = true
+      try {
+        this.fee = await calcFee(this.address, amount, { type: 'deposit' })
+      } catch (e) {
+        console.log(e)
+      }
+      this.loadingUnSpent = false
     },
     loadingList(loading) {
       if (!loading && this.done) {

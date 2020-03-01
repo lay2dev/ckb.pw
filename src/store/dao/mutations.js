@@ -1,5 +1,4 @@
-import { JSBI } from '../../services/chain'
-import { toCKB } from '../../services/utils'
+import { JSBI, toCKB } from '../../services/ckb/utils'
 
 export function SET_APC(state, payload) {
   state.apc = payload
