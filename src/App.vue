@@ -13,7 +13,8 @@ import { initETHProvider } from './services/eth/core'
 
 // const CKB_NODE = 'https://aggron.ckb.dev'
 // const CKB_NODE = 'http://w.yamen.co:8114'
-const CKB_NODE = 'http://39.99.211.143:8116/'
+// const CKB_NODE = 'http://39.99.211.143:8116/'
+const CKB_NODE = process.env.CKB_NODE
 
 export default {
   name: 'App',
