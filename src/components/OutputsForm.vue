@@ -16,7 +16,7 @@
             no-error-icon
             v-model.trim="v.address.$model"
             :placeholder="$t('label_address')"
-            :error="v.address.$error"
+            :error="!!v.address.$model && v.address.$error"
             hide-bottom-space
           >
             <template v-slot:append>
@@ -36,7 +36,7 @@
             no-error-icon
             v-model.trim.lazy="v.amount.$model"
             :placeholder="$t('label_amount')"
-            :error="v.amount.$error"
+            :error="!!v.amount.$model && v.amount.$error"
             hide-bottom-space
             @clear="v.amount.$model = 0"
           >
@@ -44,9 +44,7 @@
               <div v-if="!v.amount.minCapacity">
                 {{ `${$t('label_min_amount')}: ${MIN_AMOUNT} CKB` }}
               </div>
-              <div v-if="!v.amount.enoughBalance">
-                {{ $t('msg_broke') }}
-              </div>
+              <div v-if="!v.amount.enoughBalance">{{ $t('msg_broke') }}</div>
             </template>
             <template v-slot:control="{ floatingLabel, value, emitValue }">
               <money
@@ -98,7 +96,6 @@ import {
   minCapacity,
   enoughBalance
 } from '../services/validation'
-import { sleep } from '../services/utils'
 
 export default {
   name: 'OutputsForm',
@@ -151,14 +148,10 @@ export default {
       ckbAddress && (address = ckbAddress[0])
 
       console.log('address:', address)
-      // let output = { ...this.outputs[index], address }
-      // this.$set(this.outputs, index, output)
       this.outputs[index].address = address
     },
     async addOutput() {
       this.outputs.push({ address: null, amount: 0 })
-      await sleep(10)
-      this.$v.$reset()
     },
     deleteOutput(index) {
       this.outputs.splice(index, 1)
