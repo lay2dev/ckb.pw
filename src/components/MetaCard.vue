@@ -72,6 +72,7 @@ import { mapGetters } from 'vuex'
 import { copyToClipboard } from 'quasar'
 import { toCKB, getFullAddress } from '../services/ckb/utils'
 import VueQr from 'vue-qr'
+import ABCWallet from 'abcwallet'
 export default {
   name: 'MetaCard',
   components: { VueQr },
@@ -86,6 +87,9 @@ export default {
       balance: 'balanceGetter',
       address: 'addressGetter',
       loadingBalance: 'loadingBalanceGetter'
+    }),
+    ...mapGetters('config', {
+      provider: 'providerGetter'
     }),
     chosenAddress() {
       return this.showFullAddress ? getFullAddress(this.address) : this.address
@@ -105,6 +109,8 @@ export default {
         if (window.ethereum.isImToken) {
           // eslint-disable-next-line no-undef
           imToken.callAPI('native.setClipboard', this.chosenAddress)
+        } else if (this.provider === 'ABCWallet') {
+          ABCWallet.webview.copy({ text: this.chosenAddress })
         } else {
           console.log(e) // long address not work on android
         }
