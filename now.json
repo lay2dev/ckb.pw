@@ -1,6 +1,0 @@
-{
-  "env": {
-    "CKB_NODE": "@ckb-node",
-    "BASE_URL": "@base-url"
-  }
-}
