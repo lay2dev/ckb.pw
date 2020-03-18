@@ -1,8 +1,6 @@
 {
-  "build": {
-    "env": {
-      "CKB_NODE": "https://aggron.ckb.dev",
-      "BASE_URL": "https://api.ckb.pw/"
-    }
+  "env": {
+    "CKB_NODE": "@ckb-node",
+    "BASE_URL": "@base-url"
   }
 }
