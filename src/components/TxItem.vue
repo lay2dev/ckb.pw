@@ -95,7 +95,7 @@ export default {
   },
   methods: {
     checkTX: function({ hash }) {
-      openURL(`https://explorer.nervos.org/aggron/transaction/${hash}`)
+      openURL(`${process.env.EXPLORER_URL}transaction/${hash}`)
     },
     displayAddress: address => truncatedAddress(address),
     displayAmount: amount => toCKB(amount).split('.'),
