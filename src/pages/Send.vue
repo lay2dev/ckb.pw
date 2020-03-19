@@ -91,6 +91,7 @@
 </template>
 
 <script>
+import { debounce } from 'quasar'
 import OutputsForm from '../components/OutputsForm'
 import FeeRate from '../components/FeeRate'
 import api from '../services/api'
@@ -124,6 +125,7 @@ export default {
     }
   },
   async mounted() {
+    this.getFee = debounce(this.getFee, 500)
     // load some cells in advance
     this.address && reloadCells(this.address)
     this.outputs.push({ address: null, amount: 0 })

@@ -82,6 +82,7 @@ import DaoItem from '../components/DaoItem'
 import api from '../services/api'
 import { setFeeRate } from '../services/ckb/core'
 import GTM from '../components/gtm'
+import { debounce } from 'quasar'
 
 export default {
   name: 'Dao',
@@ -117,6 +118,7 @@ export default {
     }
   },
   mounted() {
+    this.getFee = debounce(this.getFee, 500)
     this.$nextTick(async () => {
       const feeRate = await api.getFeeRate()
       setFeeRate(feeRate)
@@ -133,6 +135,15 @@ export default {
     refresh(done) {
       this.done = done
       this.init()
+    },
+    async getFee(amount) {
+      this.loadingUnSpent = true
+      try {
+        this.fee = await calcFee(this.address, amount, { type: 'deposit' })
+      } catch (e) {
+        console.log(e)
+      }
+      this.loadingUnSpent = false
     },
     async lockIt() {
       this.sending = true
@@ -156,13 +167,7 @@ export default {
     },
     async amount(amount) {
       if (Number(amount) < 102) return
-      this.loadingUnSpent = true
-      try {
-        this.fee = await calcFee(this.address, amount, { type: 'deposit' })
-      } catch (e) {
-        console.log(e)
-      }
-      this.loadingUnSpent = false
+      this.getFee(amount)
     },
     loadingList(loading) {
       if (!loading && this.done) {

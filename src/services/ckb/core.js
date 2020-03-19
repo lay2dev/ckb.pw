@@ -315,7 +315,17 @@ export const reloadCells = async (address, needed = PRELOAD_AMOUNT) => {
 
   if (newCells.length) {
     lastId = newCells[newCells.length - 1].id
-    cells = [...cells, ...newCells]
+
+    let tempCells = []
+    if (cells.length) {
+      for (let i = 0; i < cells.length && i < newCells.length; i++) {
+        if (cells[i].id !== newCells[i].id) {
+          tempCells.push(cells[i])
+        }
+      }
+    }
+
+    cells = [...tempCells, ...newCells]
 
     const local = cells.map(c => c.capacity).reduce(sumAmount)
     if (cmpAmount(local, needed) === 'lt') {

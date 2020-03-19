@@ -9,7 +9,7 @@
         no-error-icon
         v-model.trim.lazy="$v._amount.$model"
         bottom-slots
-        :error="$v._amount.$error"
+        :error="!!$v._amount.$model && $v._amount.$error"
         @clear="$v._amount.$model = 0"
       >
         <template v-slot:hint>
@@ -41,7 +41,6 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { sleep } from '../services/utils'
 import { toCKB } from '../services/ckb/utils'
 import { Money } from 'v-money'
 import { minDaoCapacity, enoughBalance } from '../services/validation'
@@ -93,12 +92,6 @@ export default {
     _ready(ready) {
       this.$emit('update:ready', ready)
       console.log('[DaoInput] ready', ready)
-    },
-    async _amount(amount) {
-      if (!amount) {
-        await sleep(10)
-        this.$v.$reset()
-      }
     }
   },
   validations: {
