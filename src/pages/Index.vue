@@ -9,6 +9,7 @@
       <keep-alive>
         <tx-card ref="tx" />
       </keep-alive>
+      <swap-card />
       <dash-card />
     </q-pull-to-refresh>
   </q-page>
@@ -18,6 +19,7 @@
 import { mapGetters } from 'vuex'
 import MetaCard from '../components/MetaCard'
 import TxCard from '../components/TxCard'
+import SwapCard from '../components/SwapCard'
 import DashCard from '../components/DashCard'
 
 export default {
@@ -25,7 +27,8 @@ export default {
   components: {
     MetaCard,
     TxCard,
-    DashCard
+    DashCard,
+    SwapCard
   },
   data() {
     return {

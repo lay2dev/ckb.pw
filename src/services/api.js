@@ -15,7 +15,10 @@ export const API = {
   GetConfig: BASE_URL + 'cell/getConfig',
   GetBalance: BASE_URL + 'cell/getCapacityByLockHash',
   GetFeeRate: BASE_URL + 'block/feeRate',
-  GetDAOList: BASE_URL + 'dao/daoList'
+  GetDAOList: BASE_URL + 'dao/daoList',
+  GetSwapConfig: BASE_URL + 'exchange/config',
+  GetSwapRate: BASE_URL + 'exchange/tokenRate',
+  GetSwapList: BASE_URL + 'exchange/transactions'
 }
 
 export const get = async (url, params) => {
@@ -93,6 +96,18 @@ export default {
   },
   getDAOList: async lockHash => {
     const { data } = await get(API.GetDAOList, { lockHash })
+    return data
+  },
+  getSwapConfig: async () => {
+    const { data } = await get(API.GetSwapConfig)
+    return data
+  },
+  getSwapRate: async () => {
+    const { data } = await get(API.GetSwapRate)
+    return data
+  },
+  getSwapList: async address => {
+    const { data } = await get(API.GetSwapList, { address })
     return data
   }
 }

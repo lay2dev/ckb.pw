@@ -29,6 +29,32 @@ export const initETHProvider = async onAddressChanged => {
   }
 }
 
+export const getBalance = async (address, tokenAddress) => {
+  let params = [],
+    method = '',
+    from = address
+  if (tokenAddress?.length) {
+    const funcSelector = window.web3.sha3('balanceOf(address)').slice(0, 10)
+    const data = funcSelector + '000000000000000000000000' + from.slice(2)
+    params = [{ to: tokenAddress, data }, 'latest']
+    method = 'eth_call'
+  } else {
+    params = [from, 'latest']
+    method = 'eth_getBalance'
+  }
+  return new Promise((resolve, reject) => {
+    console.log('eth rpc: ', method, params)
+    window.web3.currentProvider.sendAsync({ method, params, from }, function(
+      err,
+      result
+    ) {
+      err && reject(err)
+      result.error && reject(result.error)
+      resolve(result.result)
+    })
+  })
+}
+
 export const ethSign = async (
   fromAddress,
   hashBytes,

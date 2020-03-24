@@ -22,8 +22,11 @@ export default {
   btn_settings: 'Settings',
   btn_view_more: 'View More',
 
+  label_for: 'For',
+  label_one_key_swap: 'One Key Swap',
   label_address: 'Address',
   label_amount: 'Amount',
+  label_balance: 'Balance',
   label_remaining: 'Remaining',
   label_fee: 'Fee',
   label_fee_rate: 'Fee Rate',
@@ -45,6 +48,7 @@ export default {
   label_fast: 'Fast',
   label_recent_tx: 'Recent Transactions',
   label_dapps: 'Dapps',
+  label_swap: 'Swap',
   label_no_record: 'No Record',
   label_withdrawing: 'Withdrawing',
 

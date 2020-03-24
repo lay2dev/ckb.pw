@@ -22,8 +22,11 @@ export default {
   btn_settings: '设置',
   btn_view_more: '查看更多',
 
+  label_for: '换',
+  label_one_key_swap: '一键兑换',
   label_address: '地址',
   label_amount: '金额',
+  label_balance: '余额',
   label_remaining: '余额',
   label_fee: '手续费',
   label_fee_rate: '费率',
