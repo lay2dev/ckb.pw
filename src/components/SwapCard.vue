@@ -106,9 +106,11 @@ export default {
     },
     async updateRate() {
       const rates = await api.getSwapRate()
+      const ckbRate = rates.find(r => r.symbol === 'CKB')
       for (let i = 0; i < this.tokenList.length; i++) {
         const { price } = rates.find(r => r.symbol === this.tokenList[i].symbol)
-        this.tokenList[i] = { ...this.tokenList[i], rate: price }
+        const rate = price / ckbRate.price
+        this.tokenList[i] = { ...this.tokenList[i], rate }
       }
     },
     async updateBalance(address = this.address, tokenList = this.tokenList) {
