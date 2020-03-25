@@ -17,7 +17,7 @@
                 <q-avatar>
                   <img :src="getIcon(right)" />
                 </q-avatar>
-                <div class="price-text">
+                <div class="q-ml-xs price-text">
                   {{ price }}
                 </div>
               </template>
@@ -64,6 +64,7 @@
         flat
         dense
         :label="$t('label_one_key_swap')"
+        @click="swap"
       />
     </q-card-actions>
   </q-card>
@@ -71,7 +72,7 @@
 
 <script>
 import api from '../services/api'
-import { getBalance } from '../services/eth/core'
+import { getBalance, sendAssets } from '../services/eth/core'
 import { mapGetters } from 'vuex'
 import web3Utils from 'web3-utils'
 export default {
@@ -122,7 +123,17 @@ export default {
         this.tokenList[i] = { ...tokenList[i], balance }
       }
     },
-    exchange() {}
+    async swap() {
+      const txHash = await sendAssets(
+        this.address,
+        this.config.depositEthAddress,
+        this.price,
+        this.right.address,
+        this.right.decimal,
+        this.config.chain
+      )
+      console.log('[SwapCard] tx sent: ', txHash)
+    }
   },
   watch: {
     address(address) {
