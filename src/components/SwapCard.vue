@@ -7,7 +7,7 @@
             <q-select
               v-model="right"
               :options="tokenList"
-              :display-value="right.symbol"
+              :display-value="right ? right.symbol : '-'"
               dense
               options-dense
               filled
@@ -18,7 +18,7 @@
                   <img :src="getIcon(right)" />
                 </q-avatar>
                 <div class="q-ml-xs price-text">
-                  {{ price }}
+                  {{ displayPrice() }}
                 </div>
               </template>
               <template v-slot:option="scope">
@@ -91,8 +91,7 @@ export default {
       address: 'addressGetter'
     }),
     price() {
-      const digits = this.right.symbol === 'USDT' ? 2 : 4
-      return Number(this.ckbAmount / this.right.rate).toFixed(digits)
+      return this.ckbAmount / this.right?.rate
     }
   },
   async created() {
@@ -100,10 +99,21 @@ export default {
     this.tokenList = this.config.tokenList
     await this.updateRate()
     this.right = this.tokenList[0]
+    this.timer && clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.updateRate()
+    }, 5000)
+  },
+  destroyed() {
+    this.timer && clearInterval(this.timer)
   },
   methods: {
     getIcon(token) {
-      return `../statics/${token.symbol?.toLowerCase()}.svg`
+      return `../statics/${token?.symbol?.toLowerCase()}.svg`
+    },
+    displayPrice() {
+      const digits = this.right?.symbol === 'USDT' ? 2 : 4
+      return Number(this.price).toFixed(digits)
     },
     async updateRate() {
       const rates = await api.getSwapRate()
@@ -113,14 +123,19 @@ export default {
         const rate = price / ckbRate.price
         this.tokenList[i] = { ...this.tokenList[i], rate }
       }
+      this.right = this.tokenList.find(t => t.symbol === this.right?.symbol)
+      // console.log('[update rate]', rates, this.right?.rate, this.price)
     },
     async updateBalance(address = this.address, tokenList = this.tokenList) {
-      console.log('[update balance]')
       for (let i = 0; i < tokenList.length; i++) {
-        const hexBalance = await getBalance(address, tokenList[i].address)
-        const balance = web3Utils.fromWei(hexBalance)
-        console.log('balance', balance)
-        this.tokenList[i] = { ...tokenList[i], balance }
+        try {
+          const hexBalance = await getBalance(address, tokenList[i].address)
+          const balance = web3Utils.fromWei(hexBalance)
+          console.log('balance', balance)
+          this.tokenList[i] = { ...tokenList[i], balance }
+        } catch (e) {
+          console.log('[updateRate]', e.toString())
+        }
       }
     },
     async swap() {
