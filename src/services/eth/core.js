@@ -5,7 +5,7 @@ import { ckb } from '../ckb/core'
 import { JSBI, BigInt, toCKB, truncatedAddress } from '../ckb/utils'
 
 const DecimalMap = {
-  6: 'micro',
+  6: 'mwei',
   18: 'ether'
 }
 /*
@@ -83,16 +83,17 @@ export const sendAssets = async (
   decimal = 18,
   chain = 'mainnet'
 ) => {
+
   let params = [{ from: fromAddress, to: toAddress, chain }]
   let method = 'eth_sendTransaction'
   if (tokenAddress?.length) {
-    let contract = await window.web3.eth.Contract(USDT_ABI).at(tokenAddress)
-    amount = numberToHex(toWei(amount, DecimalMap[decimal]))
+    let contract = await window.web3.eth.contract(USDT_ABI).at(tokenAddress)
+    amount = numberToHex(toWei(amount + '', DecimalMap[decimal]))
     params[0].data = contract.transfer.getData(toAddress, amount, {
       from: fromAddress
     })
   } else {
-    params[0].value = numberToHex(toWei(amount))
+    params[0].value = numberToHex(toWei(amount + ''))
   }
 
   console.log('[sendAssets]', params[0])

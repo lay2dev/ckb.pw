@@ -3,6 +3,7 @@ import GTM from '../components/gtm'
 import { Notify } from 'quasar'
 
 const BASE_URL = process.env.BASE_URL
+const SWAP_BASE_URL = process.env.SWAP_BASE_URL
 // const BASE_URL = 'https://api.ckb.pw/'
 // const BASE_URL = 'http://192.168.1.137:3000/'
 
@@ -16,9 +17,9 @@ export const API = {
   GetBalance: BASE_URL + 'cell/getCapacityByLockHash',
   GetFeeRate: BASE_URL + 'block/feeRate',
   GetDAOList: BASE_URL + 'dao/daoList',
-  GetSwapConfig: BASE_URL + 'exchange/config',
-  GetSwapRate: BASE_URL + 'exchange/tokenRate',
-  GetSwapList: BASE_URL + 'exchange/transactions'
+  GetSwapConfig: SWAP_BASE_URL + 'exchange/config',
+  GetSwapRate: SWAP_BASE_URL + 'exchange/tokenRate',
+  GetSwapList: SWAP_BASE_URL + 'exchange/transactions'
 }
 
 export const get = async (url, params) => {
