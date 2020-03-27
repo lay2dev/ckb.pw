@@ -107,13 +107,17 @@ export const calcFee = async (address, amount, extra) => {
       for (let i = 0; i < outputs.length; i++) {
         let addr = outputs[i].address
         if (addr.endsWith('.eth')) {
-          outputs[i].address = await new ENS(window.web3.currentProvider)
-            .resolver(addr)
-            .addr()
-          console.log(`${addr} resolved as ${outputs[i].address}`)
-          if (!Number(outputs[i].address)) {
+          try {
+            outputs[i].address = await new ENS(window.web3.currentProvider)
+              .resolver(addr)
+              .addr()
+            console.log(`${addr} resolved as ${outputs[i].address}`)
+            if (!Number(outputs[i].address)) {
+              throw new Error('No records of ens name ' + addr)
+            }
+          } catch (e) {
             outputs[i].address = 'Unknown ENS Name'
-            throw new Error('No records of ens name ' + addr)
+            throw e
           }
         }
       }
