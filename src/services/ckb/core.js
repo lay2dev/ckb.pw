@@ -1,5 +1,6 @@
 import CKBCore from '@nervosnetwork/ckb-sdk-core'
 import * as ckbUtils from '@nervosnetwork/ckb-sdk-utils'
+import ENS from 'ethereum-ens'
 import { Notify } from 'quasar'
 import api from '../api'
 import GTM from '../../components/gtm'
@@ -87,7 +88,8 @@ export const isNoMoreCells = () => noMoreCells
 export const calcFee = async (address, amount, extra) => {
   console.log('[calcFee] amount:', amount)
   await reloadCells(address, amount)
-  let tx = null
+  let tx = null,
+    outputs = null
   switch (extra.type) {
     case 'deposit':
       tx = depositTxBuilder(address, amount, cells)
@@ -100,7 +102,22 @@ export const calcFee = async (address, amount, extra) => {
       tx = claimTxBuilder(extra.data)
       break
     default:
-      tx = txBuilder(address, cells, extra.data)
+      // check if any ens name exists
+      outputs = extra.data
+      for (let i = 0; i < outputs.length; i++) {
+        let addr = outputs[i].address
+        if (addr.endsWith('.eth')) {
+          outputs[i].address = await new ENS(window.web3.currentProvider)
+            .resolver(addr)
+            .addr()
+          console.log(`${addr} resolved as ${outputs[i].address}`)
+          if (!Number(outputs[i].address)) {
+            outputs[i].address = 'Unknown ENS Name'
+            throw new Error('No records of ens name ' + addr)
+          }
+        }
+      }
+      tx = txBuilder(address, cells, outputs)
   }
   lastSize = txSize(tx)
   return ckbUtils.calculateTransactionFee(
