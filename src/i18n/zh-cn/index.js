@@ -21,6 +21,7 @@ export default {
   btn_copy: '复制',
   btn_settings: '设置',
   btn_view_more: '查看更多',
+  btn_fee_details: '费率说明',
 
   label_for: '换',
   label_one_key_swap: '一键兑换',
@@ -65,5 +66,7 @@ export default {
   msg_broke: `余额不能低于 61 CKB`,
   msg_confirm_delete: '确认删除 ?',
   msg_copy_success: '已复制 !',
-  msg_no_more_cells: '暂时没有可用的 Cell，请在上一笔交易确认后重新发送'
+  msg_no_more_cells: '暂时没有可用的 Cell，请在上一笔交易确认后重新发送',
+  msg_fee_details:
+    '费率为 0.5%，兑换方式为火币代下单。如果遇到较大汇率波动，到账金额可能少于预期，还望理解。'
 }

@@ -83,7 +83,6 @@ export const sendAssets = async (
   decimal = 18,
   chain = 'mainnet'
 ) => {
-
   let params = [{ from: fromAddress, to: toAddress, chain }]
   let method = 'eth_sendTransaction'
   if (tokenAddress?.length) {

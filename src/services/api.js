@@ -19,7 +19,9 @@ export const API = {
   GetDAOList: BASE_URL + 'dao/daoList',
   GetSwapConfig: SWAP_BASE_URL + 'exchange/config',
   GetSwapRate: SWAP_BASE_URL + 'exchange/tokenRate',
-  GetSwapList: SWAP_BASE_URL + 'exchange/transactions'
+  GetSwapList: SWAP_BASE_URL + 'exchange/transactions',
+
+  SubmitPendingSwap: SWAP_BASE_URL + 'exchange/submitPendingSwap'
 }
 
 export const get = async (url, params) => {
@@ -40,6 +42,27 @@ export const get = async (url, params) => {
     })
     Notify.create({
       message: '[API] - ' + e.toString(),
+      position: 'top',
+      timeout: 2000,
+      color: 'negative'
+    })
+  }
+
+  return ret
+}
+
+const post = async (url, params) => {
+  let ret = null
+  try {
+    ret = await axios.post(url, params)
+  } catch (e) {
+    GTM.logEvent({
+      category: 'exceptions',
+      action: `Error: ${e.toString()} | Params: ${JSON.stringify(params)}`,
+      label: '[API] - ' + url.split('/').pop()
+    })
+    Notify.create({
+      message: '[API] - ' + e.toString() + 'Params: ' + JSON.parse(params),
       position: 'top',
       timeout: 2000,
       color: 'negative'
@@ -109,6 +132,23 @@ export default {
   },
   getSwapList: async address => {
     const { data } = await get(API.GetSwapList, { address })
+    return data
+  },
+
+  submitPendingSwap: async ({
+    txHash,
+    ckbAmount,
+    symbol,
+    tokenAmount,
+    fromAddress
+  }) => {
+    const { data } = await post(API.SubmitPendingSwap, {
+      txhash: txHash,
+      ckbAmount,
+      tokenSymbol: symbol,
+      tokenAmount,
+      from: fromAddress
+    })
     return data
   }
 }

@@ -4,7 +4,9 @@
       <div class="row">
         <div class="col column">
           <div class="row justify-between items-center q-gutter-xs">
+            <q-skeleton class="col" v-show="loading" type="QBtn" />
             <q-select
+              v-show="!loading"
               v-model="right"
               :options="tokenList"
               :display-value="right ? right.symbol : '-'"
@@ -41,10 +43,11 @@
               </template>
             </q-select>
             <q-icon name="las la-exchange-alt" />
-            <!-- <div class="text-grey">{{ $t('label_for') }}</div> -->
+            <q-skeleton class="col" v-show="loading" type="QBtn" />
             <q-select
+              v-show="!loading"
               v-model="ckbAmount"
-              :options="amountList"
+              :options="config.swapCKBAmountList"
               :display-value="ckbAmount + ' CKB'"
               dense
               options-cover
@@ -58,9 +61,28 @@
       </div>
     </q-card-section>
     <q-separator />
-    <q-card-actions class="q-pa-xs" align="evenly">
+    <q-slide-transition>
+      <div v-show="showFeeDetails">
+        <q-card-section class="text-subitle2">
+          {{ $t('msg_fee_details') }}
+        </q-card-section>
+        <q-separator />
+      </div>
+    </q-slide-transition>
+    <q-card-actions class="q-pa-xs" align="between">
       <q-btn
-        class="full-width col"
+        class="col"
+        flat
+        dense
+        :label="$t('btn_fee_details')"
+        :icon-right="
+          showFeeDetails ? 'keyboard_arrow_up' : 'keyboard_arrow_down'
+        "
+        @click="showFeeDetails = !showFeeDetails"
+      />
+      <q-separator inset vertical />
+      <q-btn
+        class="col-7"
         flat
         dense
         :label="$t('label_one_key_swap')"
@@ -79,10 +101,11 @@ export default {
   name: 'SwapCard',
   data() {
     return {
+      loading: false,
       config: {},
       ckbAmount: 1000,
       right: {},
-      amountList: [200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000],
+      showFeeDetails: false,
       tokenList: []
     }
   },
@@ -95,6 +118,7 @@ export default {
     }
   },
   async created() {
+    this.loading = true
     this.config = await api.getSwapConfig()
     this.tokenList = this.config.tokenList
     await this.updateRate()
@@ -103,6 +127,7 @@ export default {
     this.timer = setInterval(() => {
       this.updateRate()
     }, 5000)
+    this.loading = false
   },
   destroyed() {
     this.timer && clearInterval(this.timer)
@@ -147,7 +172,14 @@ export default {
         this.right.decimal,
         this.config.chain
       )
-      console.log('[SwapCard] tx sent: ', txHash)
+      const ret = await api.submitPendingSwap({
+        txHash,
+        ckbAmount: this.ckbAmount,
+        symbol: this.right.symbol,
+        tokenAmount: this.price,
+        fromAddress: this.address
+      })
+      console.log('[SwapCard] tx sent: ', txHash, ret)
     }
   },
   watch: {
