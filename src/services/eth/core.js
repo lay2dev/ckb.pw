@@ -1,7 +1,41 @@
 import * as ethUtil from 'ethereumjs-util'
-import web3Utils from 'web3-utils'
+import USDT_ABI from './usdt.json'
+import { toWei, sha3, numberToHex } from 'web3-utils'
 import { ckb } from '../ckb/core'
 import { JSBI, BigInt, toCKB, truncatedAddress } from '../ckb/utils'
+
+const DecimalMap = {
+  6: 'mwei',
+  18: 'ether'
+}
+/*
+const minABI = [
+  // transfer
+  {
+    constant: false,
+    inputs: [
+      {
+        name: '_to',
+        type: 'address'
+      },
+      {
+        name: '_value',
+        type: 'uint256'
+      }
+    ],
+    name: 'transfer',
+    outputs: [
+      {
+        name: 'success',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
+]
+*/
 
 export const initETHProvider = async onAddressChanged => {
   if (typeof window.ethereum !== 'undefined') {
@@ -29,6 +63,60 @@ export const initETHProvider = async onAddressChanged => {
   }
 }
 
+const sendAsync = async (params, method, from) =>
+  new Promise((resolve, reject) => {
+    window.web3.currentProvider.sendAsync({ method, params, from }, function(
+      err,
+      result
+    ) {
+      err && reject(err)
+      result.error && reject(result.error)
+      resolve(result.result)
+    })
+  })
+
+export const sendAssets = async (
+  fromAddress,
+  toAddress,
+  amount,
+  tokenAddress,
+  decimal = 18,
+  chain = 'mainnet'
+) => {
+
+  let params = [{ from: fromAddress, to: toAddress, chain }]
+  let method = 'eth_sendTransaction'
+  if (tokenAddress?.length) {
+    let contract = await window.web3.eth.contract(USDT_ABI).at(tokenAddress)
+    amount = numberToHex(toWei(amount + '', DecimalMap[decimal]))
+    params[0].data = contract.transfer.getData(toAddress, amount, {
+      from: fromAddress
+    })
+  } else {
+    params[0].value = numberToHex(toWei(amount + ''))
+  }
+
+  console.log('[sendAssets]', params[0])
+  return sendAsync(params, method, fromAddress)
+}
+
+export const getBalance = async (fromAddress, tokenAddress) => {
+  let params = [],
+    method = '',
+    from = fromAddress
+  if (tokenAddress?.length) {
+    const funcSelector = window.web3.sha3('balanceOf(address)').slice(0, 10)
+    const data = funcSelector + '000000000000000000000000' + from.slice(2)
+    params = [{ to: tokenAddress, data }, 'latest']
+    method = 'eth_call'
+  } else {
+    params = [from, 'latest']
+    method = 'eth_getBalance'
+  }
+
+  return sendAsync(params, method, fromAddress)
+}
+
 export const ethSign = async (
   fromAddress,
   hashBytes,
@@ -36,7 +124,7 @@ export const ethSign = async (
   typedDataParams = null
 ) => {
   const signer = getSignerByProvider(provider)
-  const message = web3Utils.sha3(hashBytes)
+  const message = sha3(hashBytes)
   const signature = await signer(fromAddress, message, typedDataParams)
   console.log('signature', signature)
   let signatureObj = ethUtil.fromRpcSig(signature)

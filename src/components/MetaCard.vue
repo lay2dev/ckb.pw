@@ -25,7 +25,7 @@
         </div>
         <div class="text-caption">{{ address }}</div>
       </q-card-section>
-      <q-card-actions dense align="evenly">
+      <q-card-actions align="evenly">
         <q-btn flat ripple class="full-width col" @click="receiveDialog = true">
           {{ $t('btn_receive') }}
         </q-btn>
