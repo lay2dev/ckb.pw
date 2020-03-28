@@ -31,7 +31,8 @@ export function SET_CAPACITY(state, payload) {
 }
 
 export function SET_TXS(state, payload) {
-  state.txs = payload
+  state.txs = distinctObjectArray([...payload, ...state.txs], 'hash')
+  state.txs = state.txs.sort((a, b) => b.time - a.time)
 }
 
 export function APPEND_TXS(state, payload) {

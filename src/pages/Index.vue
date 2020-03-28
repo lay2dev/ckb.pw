@@ -49,7 +49,7 @@ export default {
   },
   methods: {
     refresh: async function(done) {
-      this.$refs.tx.clearTXs()
+      // this.$refs.tx.clearTXs()
       await Promise.all([
         this.$refs.meta.loadBalance(),
         this.$refs.tx.loadTXs()

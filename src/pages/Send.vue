@@ -189,6 +189,17 @@ export default {
           value: Number(this.sendAmount)
         }
         GTM.logEvent(gtmEvent)
+
+        const pendingTx = {
+          hash: txHash,
+          time: new Date().getTime(),
+          from: this.address,
+          to: this.outputs[0].address,
+          type: 'pending',
+          amount: this.sendAmount,
+          direction: 'out'
+        }
+        this.$store.commit('account/SET_TXS', [pendingTx])
         this.sent = true
       }
       this.sending = false

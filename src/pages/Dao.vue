@@ -156,6 +156,17 @@ export default {
           value: Number(this.amount)
         }
         GTM.logEvent(gtmEvent)
+
+        const pendingTx = {
+          hash: txHash,
+          time: new Date().getTime(),
+          from: this.address,
+          to: 'Nervos DAO',
+          type: 'pending',
+          amount: this.amount,
+          direction: 'out'
+        }
+        this.$store.commit('account/SET_TXS', [pendingTx])
         this.sent = true
       }
       this.sending = false

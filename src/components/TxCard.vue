@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-card v-if="loading" square class="q-mb-sm">
+    <q-card v-if="loadingTXs" square class="q-mb-sm">
       <q-card-section>
         <div class="q-ma-sm" v-for="n in limit" :key="n">
           <q-skeleton type="rect" />
@@ -13,7 +13,12 @@
       </center>
       <q-separator />
       <q-list v-if="txs.length" dense bordered separator>
-        <tx-item dense v-for="tx in txs" :tx="tx" :key="tx.hash" />
+        <tx-item
+          dense
+          v-for="n in limit"
+          :tx="txs[n - 1]"
+          :key="txs[n - 1].hash"
+        />
       </q-list>
       <div v-else class="text-grey-4 column items-center q-ma-sm">
         <q-icon size="3em" name="las la-inbox" />
@@ -28,23 +33,23 @@
 <script>
 import TxItem from './TxItem'
 import { mapGetters } from 'vuex'
-import api from '../services/api'
-import { getLockScriptFromAddress } from '../services/ckb/utils'
-import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
+// import api from '../services/api'
+// import { getLockScriptFromAddress } from '../services/ckb/utils'
+// import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
 const LIMIT = 5
 export default {
   name: 'TxCard',
   components: { TxItem },
   data() {
     return {
-      txs: [],
-      loading: false,
       limit: LIMIT
     }
   },
   computed: {
     ...mapGetters('account', {
-      address: 'addressGetter'
+      txs: 'txsGetter',
+      address: 'addressGetter',
+      loadingTXs: 'loadingTXsGetter'
     })
   },
   activated() {
@@ -53,6 +58,8 @@ export default {
   methods: {
     async loadTXs(address = this.address) {
       if (!address) return
+      this.$store.dispatch('account/LOAD_TXS', { size: this.limit })
+      /*
       this.loading = true
       const _txs = await api.getTxList(
         scriptToHash(getLockScriptFromAddress(address)),
@@ -61,9 +68,7 @@ export default {
       )
       this.txs = _txs.slice(0, this.limit)
       this.loading = false
-    },
-    clearTXs() {
-      this.txs = []
+      */
     }
   },
   watch: {
