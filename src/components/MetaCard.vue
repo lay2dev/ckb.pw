@@ -23,7 +23,7 @@
             CKB
           </div>
         </div>
-        <div class="text-caption">{{ address }}</div>
+        <div class="text-caption">{{ displayAddress(address) }}</div>
       </q-card-section>
       <q-card-actions align="evenly">
         <q-btn flat ripple class="full-width col" @click="receiveDialog = true">
@@ -70,7 +70,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import { copyToClipboard } from 'quasar'
-import { toCKB, getFullAddress } from '../services/ckb/utils'
+import { toCKB, getFullAddress, truncatedAddress } from '../services/ckb/utils'
 import VueQr from 'vue-qr'
 import ABCWallet from 'abcwallet'
 export default {
@@ -122,6 +122,7 @@ export default {
         timeout: 1000
       })
     },
+    displayAddress: address => truncatedAddress(address, 25),
     displayBalance: balance => toCKB(balance).split('.'),
     async loadBalance(address = this.address) {
       console.log('loading balance of ', address)

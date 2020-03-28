@@ -9,7 +9,9 @@ export const verifyAddress = address => {
   // check if is eth address
   if (address.startsWith('0x') && web3Utils.isAddress(address)) return 'eth'
 
-  console.log('not eth address')
+  // check if is ens name
+  if (address.endsWith('.eth')) return 'ens'
+
   let maybe = null
 
   address.startsWith('ckb') && (maybe = 'ckb')
