@@ -54,21 +54,18 @@ export default {
   },
   activated() {
     this.address.length && this.loadTXs(this.address)
+    this.timer && clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.loadTXs(this.address, true)
+    }, 5000)
+  },
+  deactivated() {
+    this.timer && clearInterval(this.timer)
   },
   methods: {
-    async loadTXs(address = this.address) {
+    async loadTXs(address = this.address, quiet) {
       if (!address) return
-      this.$store.dispatch('account/LOAD_TXS', { size: this.limit })
-      /*
-      this.loading = true
-      const _txs = await api.getTxList(
-        scriptToHash(getLockScriptFromAddress(address)),
-        null,
-        this.limit
-      )
-      this.txs = _txs.slice(0, this.limit)
-      this.loading = false
-      */
+      this.$store.dispatch('account/LOAD_TXS', { size: this.limit, quiet })
     }
   },
   watch: {

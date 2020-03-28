@@ -129,7 +129,7 @@ export default {
   },
   methods: {
     init(address = this.address) {
-      this.$store.dispatch('account/LOAD_BALANCE')
+      this.$store.dispatch('account/LOAD_BALANCE', { address })
       this.$store.dispatch('dao/LOAD_LIST', { address })
     },
     refresh(done) {

@@ -129,7 +129,8 @@ export default {
     // load some cells in advance
     this.address && reloadCells(this.address)
     this.outputs.push({ address: null, amount: 0 })
-    this.$store.dispatch('account/LOAD_BALANCE')
+    this.address &&
+      this.$store.dispatch('account/LOAD_BALANCE', { address: this.address })
     this.feeRate = await api.getFeeRate()
     this.resetTXs()
   },
@@ -207,7 +208,7 @@ export default {
   },
   watch: {
     address(address) {
-      this.$store.dispatch('account/LOAD_BALANCE')
+      this.$store.dispatch('account/LOAD_BALANCE', { address })
       // load some cells in advance
       reloadCells(address)
     },

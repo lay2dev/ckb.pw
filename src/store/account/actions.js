@@ -2,18 +2,14 @@ import api from '../../services/api'
 import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
 import { getLockScriptFromETHAddress } from '../../services/ckb/utils'
 
-export async function LOAD_BALANCE(
-  { commit, getters },
-  address = getters.addressGetter
-) {
+export async function LOAD_BALANCE({ commit }, { address, quiet }) {
   try {
     const lockHash = scriptToHash(getLockScriptFromETHAddress(address))
-    console.log(`[LOAD_BALANCE] lockHash of ${address}`, lockHash)
     if (lockHash) {
-      commit('LOADING_BALANCE')
+      !quiet && commit('LOADING_BALANCE')
       const capacity = await api.getBalance(lockHash)
       commit('SET_CAPACITY', capacity)
-      commit('BALANCE_LOADED')
+      !quiet && commit('BALANCE_LOADED')
     }
   } catch (e) {
     console.log(e.toString())
@@ -22,14 +18,14 @@ export async function LOAD_BALANCE(
 
 export async function LOAD_TXS(
   { commit, getters },
-  { lastHash, size = 20, type = 'all' }
+  { lastHash, size = 20, type = 'all', quiet }
 ) {
   try {
     const lockHash = scriptToHash(
       getLockScriptFromETHAddress(getters.addressGetter)
     )
     if (lockHash) {
-      commit('LOADING_TXS')
+      !quiet && commit('LOADING_TXS')
       const txs = await api.getTxList(lockHash, lastHash, size, type)
       if (txs.length) {
         if (lastHash) {
@@ -42,7 +38,7 @@ export async function LOAD_TXS(
         !lastHash && commit(commit('SET_TXS', txs))
         commit('TXS_NO_MORE', true)
       }
-      commit('TXS_LOADED')
+      !quiet && commit('TXS_LOADED')
     } else {
       console.log('address not ready')
     }
