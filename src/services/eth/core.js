@@ -4,7 +4,7 @@ import { toWei, sha3, numberToHex } from 'web3-utils'
 import { ckb } from '../ckb/core'
 import { JSBI, BigInt, toCKB, truncatedAddress } from '../ckb/utils'
 
-const DecimalMap = {
+export const DecimalMap = {
   6: 'mwei',
   18: 'ether'
 }
@@ -87,7 +87,8 @@ export const sendAssets = async (
   let method = 'eth_sendTransaction'
   if (tokenAddress?.length) {
     let contract = await window.web3.eth.contract(USDT_ABI).at(tokenAddress)
-    amount = numberToHex(toWei(amount + '', DecimalMap[decimal]))
+    amount = numberToHex(toWei(amount.toFixed(decimal), DecimalMap[decimal]))
+    params[0].to = tokenAddress
     params[0].data = contract.transfer.getData(toAddress, amount, {
       from: fromAddress
     })
