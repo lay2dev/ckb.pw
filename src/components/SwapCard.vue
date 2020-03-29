@@ -95,7 +95,7 @@
 
 <script>
 import api from '../services/api'
-import { getBalance, sendAssets } from '../services/eth/core'
+import { getBalance, sendAssets, DecimalMap } from '../services/eth/core'
 import { mapGetters } from 'vuex'
 import web3Utils from 'web3-utils'
 export default {
@@ -163,7 +163,10 @@ export default {
       for (let i = 0; i < tokenList.length; i++) {
         try {
           const hexBalance = await getBalance(address, tokenList[i].address)
-          const balance = web3Utils.fromWei(hexBalance)
+          const balance = web3Utils.fromWei(
+            hexBalance,
+            DecimalMap[tokenList[i].decimal]
+          )
           console.log('balance', balance)
           this.tokenList[i] = { ...tokenList[i], balance }
         } catch (e) {
