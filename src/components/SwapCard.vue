@@ -61,6 +61,7 @@
       </div>
     </q-card-section>
     <q-separator />
+
     <q-slide-transition>
       <div v-show="showFeeDetails">
         <q-card-section class="text-subitle2">
@@ -106,7 +107,8 @@ export default {
       ckbAmount: 1000,
       right: {},
       showFeeDetails: false,
-      tokenList: []
+      tokenList: [],
+      pendingList: []
     }
   },
   computed: {
@@ -119,13 +121,19 @@ export default {
   },
   async created() {
     this.loading = true
-    this.config = await api.getSwapConfig()
+    const rets = await Promise.all([
+      api.getSwapConfig(),
+      this.address && api.getSwapList(this.address)
+    ])
+    this.config = rets[0]
+    this.pendingList = rets[1]
     this.tokenList = this.config.tokenList
-    await this.updateRate()
+    this.updateRate()
     this.right = this.tokenList[0]
     this.timer && clearInterval(this.timer)
-    this.timer = setInterval(() => {
+    this.timer = setInterval(async () => {
       this.updateRate()
+      this.pendingList = api.getSwapList(this.address)
     }, 5000)
     this.loading = false
   },
