@@ -1,3 +1,11 @@
+<!-- 
+A card UI component for user to exchange CKBytes with Ethereum assets such as ETH or USDT. More ethereum tokens will be supported in the future.
+The exchange rate is the realtime rate from HUOBI pro exchange.
+The swap process is as follows:
+1. User choose the demanded quantities of CKBytes. the corresponding number of ethereum assets will be calculated immediately.
+2. User send the corresponding ethereum assets to specific ethereum address of Lay2 from user's ethereume wallet.
+3. After Lay2 received the ethereum assets, Lay2 will send user demanded quantities of CKBytes to user. The CKBytes is locked by pw-lock script with user's ethereum address as lock args.
+-->
 <template>
   <q-card id="metaCard" square class="q-mb-sm">
     <q-card-section class="q-pa-sm">
