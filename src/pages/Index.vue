@@ -27,7 +27,7 @@ export default {
   components: {
     MetaCard,
     TxCard,
-    DashCard,
+    DashCard
     // SwapCard
   },
   data() {

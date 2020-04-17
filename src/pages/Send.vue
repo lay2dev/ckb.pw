@@ -197,10 +197,14 @@ export default {
           from: this.address,
           to: this.outputs[0].address,
           type: 'pending',
-          amount: this.sendAmount,
+          amount: fromCKB(this.sendAmount),
           direction: 'out'
         }
-        this.$store.commit('account/SET_TXS', [pendingTx])
+        // this.$store.commit('account/APPEND_TXS', [pendingTx])
+        let pending = this.$q.localStorage.getItem('pending') || []
+        pending.unshift(pendingTx)
+        this.$q.localStorage.set('pending', pending)
+
         this.sent = true
       }
       this.sending = false

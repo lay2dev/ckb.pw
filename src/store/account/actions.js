@@ -35,7 +35,7 @@ export async function LOAD_TXS(
           commit('TXS_NO_MORE', false)
         }
       } else {
-        !lastHash && commit(commit('SET_TXS', txs))
+        !lastHash && commit('SET_TXS', txs)
         commit('TXS_NO_MORE', true)
       }
       !quiet && commit('TXS_LOADED')

@@ -2,7 +2,7 @@
   <div>
     <q-card v-if="loadingTXs" square class="q-mb-sm">
       <q-card-section>
-        <div class="q-ma-sm" v-for="n in limit" :key="n">
+        <div class="q-ma-sm" v-for="n in LIMIT" :key="n">
           <q-skeleton type="rect" />
         </div>
       </q-card-section>
@@ -13,12 +13,7 @@
       </center>
       <q-separator />
       <q-list v-if="txs.length" dense bordered separator>
-        <tx-item
-          dense
-          v-for="n in limit"
-          :tx="txs[n - 1]"
-          :key="txs[n - 1].hash"
-        />
+        <tx-item dense v-for="tx in txs" :tx="tx" :key="tx.hash" />
       </q-list>
       <div v-else class="text-grey-4 column items-center q-ma-sm">
         <q-icon size="3em" name="las la-inbox" />
@@ -33,24 +28,33 @@
 <script>
 import TxItem from './TxItem'
 import { mapGetters } from 'vuex'
-// import api from '../services/api'
-// import { getLockScriptFromAddress } from '../services/ckb/utils'
-// import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
 const LIMIT = 5
 export default {
   name: 'TxCard',
   components: { TxItem },
-  data() {
+  data(){
     return {
-      limit: LIMIT
+      LIMIT: LIMIT
     }
   },
   computed: {
     ...mapGetters('account', {
-      txs: 'txsGetter',
+      remoteTXs: 'txsGetter',
       address: 'addressGetter',
       loadingTXs: 'loadingTXsGetter'
-    })
+    }),
+    txs() {
+      let pending = this.$q.localStorage.getItem('pending') || []
+      let stillPending = []
+      for (let p of pending) {
+        if (this.remoteTXs.find(rtx => rtx.hash === p.hash)) {
+          continue
+        }
+        stillPending.push(p)
+      }
+      this.$q.localStorage.set('pending', stillPending)
+      return [...stillPending, ...this.remoteTXs].slice(0, LIMIT)
+    }
   },
   activated() {
     this.address.length && this.loadTXs(this.address)
@@ -65,7 +69,7 @@ export default {
   methods: {
     async loadTXs(address = this.address, quiet) {
       if (!address) return
-      this.$store.dispatch('account/LOAD_TXS', { size: this.limit, quiet })
+      this.$store.dispatch('account/LOAD_TXS', { size: LIMIT, quiet })
     }
   },
   watch: {
