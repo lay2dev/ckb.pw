@@ -74,7 +74,7 @@ export const setFeeRate = _feeRate => {
   )
 }
 export const setPlatform = ({ provider, chain }) => {
-  const EIP712Supported = ['MetaMask']
+  const EIP712Supported = ['MetaMask', 'ImToken']
   platform.provider = provider
   platform.chain = chain
   platform.typedData = EIP712Supported.includes(provider)
