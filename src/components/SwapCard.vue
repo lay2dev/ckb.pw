@@ -1,3 +1,11 @@
+<!-- 
+A card UI component for user to exchange CKBytes with Ethereum assets such as ETH or USDT. More ethereum tokens will be supported in the future.
+The exchange rate is the realtime rate from HUOBI pro exchange.
+The swap process is as follows:
+1. User choose the demanded quantities of CKBytes. the corresponding number of ethereum assets will be calculated immediately.
+2. User send the corresponding ethereum assets to specific ethereum address of Lay2 from user's ethereume wallet.
+3. After Lay2 received the ethereum assets, Lay2 will send user demanded quantities of CKBytes to user. The CKBytes is locked by pw-lock script with user's ethereum address as lock args.
+-->
 <template>
   <q-card id="metaCard" square class="q-mb-sm">
     <q-card-section class="q-pa-sm">
@@ -61,6 +69,7 @@
       </div>
     </q-card-section>
     <q-separator />
+
     <q-slide-transition>
       <div v-show="showFeeDetails">
         <q-card-section class="text-subitle2">
@@ -94,7 +103,7 @@
 
 <script>
 import api from '../services/api'
-import { getBalance, sendAssets } from '../services/eth/core'
+import { getBalance, sendAssets, DecimalMap } from '../services/eth/core'
 import { mapGetters } from 'vuex'
 import web3Utils from 'web3-utils'
 export default {
@@ -106,7 +115,8 @@ export default {
       ckbAmount: 1000,
       right: {},
       showFeeDetails: false,
-      tokenList: []
+      tokenList: [],
+      pendingList: []
     }
   },
   computed: {
@@ -119,13 +129,19 @@ export default {
   },
   async created() {
     this.loading = true
-    this.config = await api.getSwapConfig()
+    const rets = await Promise.all([
+      api.getSwapConfig(),
+      this.address && api.getSwapList(this.address)
+    ])
+    this.config = rets[0]
+    this.pendingList = rets[1]
     this.tokenList = this.config.tokenList
-    await this.updateRate()
+    this.updateRate()
     this.right = this.tokenList[0]
     this.timer && clearInterval(this.timer)
-    this.timer = setInterval(() => {
+    this.timer = setInterval(async () => {
       this.updateRate()
+      this.pendingList = api.getSwapList(this.address)
     }, 5000)
     this.loading = false
   },
@@ -155,7 +171,10 @@ export default {
       for (let i = 0; i < tokenList.length; i++) {
         try {
           const hexBalance = await getBalance(address, tokenList[i].address)
-          const balance = web3Utils.fromWei(hexBalance)
+          const balance = web3Utils.fromWei(
+            hexBalance,
+            DecimalMap[tokenList[i].decimal]
+          )
           console.log('balance', balance)
           this.tokenList[i] = { ...tokenList[i], balance }
         } catch (e) {

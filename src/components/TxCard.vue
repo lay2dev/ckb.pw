@@ -1,8 +1,8 @@
 <template>
   <div>
-    <q-card v-if="loading" square class="q-mb-sm">
+    <q-card v-if="loadingTXs" square class="q-mb-sm">
       <q-card-section>
-        <div class="q-ma-sm" v-for="n in limit" :key="n">
+        <div class="q-ma-sm" v-for="n in LIMIT" :key="n">
           <q-skeleton type="rect" />
         </div>
       </q-card-section>
@@ -28,42 +28,48 @@
 <script>
 import TxItem from './TxItem'
 import { mapGetters } from 'vuex'
-import api from '../services/api'
-import { getLockScriptFromAddress } from '../services/ckb/utils'
-import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils'
 const LIMIT = 5
 export default {
   name: 'TxCard',
   components: { TxItem },
-  data() {
+  data(){
     return {
-      txs: [],
-      loading: false,
-      limit: LIMIT
+      LIMIT: LIMIT
     }
   },
   computed: {
     ...mapGetters('account', {
-      address: 'addressGetter'
-    })
+      remoteTXs: 'txsGetter',
+      address: 'addressGetter',
+      loadingTXs: 'loadingTXsGetter'
+    }),
+    txs() {
+      let pending = this.$q.localStorage.getItem('pending') || []
+      let stillPending = []
+      for (let p of pending) {
+        if (this.remoteTXs.find(rtx => rtx.hash === p.hash)) {
+          continue
+        }
+        stillPending.push(p)
+      }
+      this.$q.localStorage.set('pending', stillPending)
+      return [...stillPending, ...this.remoteTXs].slice(0, LIMIT)
+    }
   },
   activated() {
     this.address.length && this.loadTXs(this.address)
+    this.timer && clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.loadTXs(this.address, true)
+    }, 5000)
+  },
+  deactivated() {
+    this.timer && clearInterval(this.timer)
   },
   methods: {
-    async loadTXs(address = this.address) {
+    async loadTXs(address = this.address, quiet) {
       if (!address) return
-      this.loading = true
-      const _txs = await api.getTxList(
-        scriptToHash(getLockScriptFromAddress(address)),
-        null,
-        this.limit
-      )
-      this.txs = _txs.slice(0, this.limit)
-      this.loading = false
-    },
-    clearTXs() {
-      this.txs = []
+      this.$store.dispatch('account/LOAD_TXS', { size: LIMIT, quiet })
     }
   },
   watch: {

@@ -9,7 +9,6 @@
           color="primary"
           text-color="white"
         />
-
         <q-avatar
           v-if="tx.type === 'dao-withdraw2'"
           icon="las la-coins"
@@ -25,6 +24,11 @@
           :size="avatarSize"
           color="blue-grey-6"
           text-color="white"
+        />
+        <q-spinner-tail
+          v-if="tx.type === 'pending'"
+          :size="avatarSize"
+          color="grey-6"
         />
         <q-avatar
           v-if="tx.type === 'dao-deposit'"
@@ -44,7 +48,12 @@
     </q-item-section>
     <q-item-section>
       <q-item-label lines="1">
-        <span :class="`${tx.direction}-text`">
+        <span
+          :class="[
+            `${tx.direction}-text`,
+            tx.type === 'pending' ? 'text-grey-6' : null
+          ]"
+        >
           <span class="text-balance-int">{{
             displayAmount(tx.amount)[0]
           }}</span>

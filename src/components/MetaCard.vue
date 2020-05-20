@@ -99,6 +99,13 @@ export default {
     this.$nextTick(() => {
       this.loadBalance()
     })
+    this.timer && clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.loadBalance(this.address, true)
+    }, 5000)
+  },
+  destroyed() {
+    this.timer && clearInterval(this.timer)
   },
   methods: {
     async copyAddress() {
@@ -124,9 +131,9 @@ export default {
     },
     displayAddress: address => truncatedAddress(address, 25),
     displayBalance: balance => toCKB(balance).split('.'),
-    async loadBalance(address = this.address) {
-      console.log('loading balance of ', address)
-      address && this.$store.dispatch('account/LOAD_BALANCE', address)
+    async loadBalance(address = this.address, quiet) {
+      address &&
+        this.$store.dispatch('account/LOAD_BALANCE', { address, quiet })
     }
   },
   watch: {

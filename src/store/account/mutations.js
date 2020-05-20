@@ -31,11 +31,15 @@ export function SET_CAPACITY(state, payload) {
 }
 
 export function SET_TXS(state, payload) {
+  // state.txs = distinctObjectArray([...payload, ...state.txs], 'hash')
+  // state.txs = state.txs.sort((a, b) => b.time - a.time)
   state.txs = payload
 }
 
 export function APPEND_TXS(state, payload) {
-  state.txs = distinctObjectArray([...state.txs, ...payload], 'hash')
+  state.txs = distinctObjectArray([...state.txs, ...payload], 'hash').sort(
+    (a, b) => b.time - a.time
+  )
 }
 
 function distinctObjectArray(arr, prop) {

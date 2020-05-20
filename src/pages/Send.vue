@@ -129,7 +129,8 @@ export default {
     // load some cells in advance
     this.address && reloadCells(this.address)
     this.outputs.push({ address: null, amount: 0 })
-    this.$store.dispatch('account/LOAD_BALANCE')
+    this.address &&
+      this.$store.dispatch('account/LOAD_BALANCE', { address: this.address })
     this.feeRate = await api.getFeeRate()
     this.resetTXs()
   },
@@ -189,6 +190,21 @@ export default {
           value: Number(this.sendAmount)
         }
         GTM.logEvent(gtmEvent)
+
+        const pendingTx = {
+          hash: txHash,
+          time: new Date().getTime(),
+          from: this.address,
+          to: this.outputs[0].address,
+          type: 'pending',
+          amount: fromCKB(this.sendAmount),
+          direction: 'out'
+        }
+        // this.$store.commit('account/APPEND_TXS', [pendingTx])
+        let pending = this.$q.localStorage.getItem('pending') || []
+        pending.unshift(pendingTx)
+        this.$q.localStorage.set('pending', pending)
+
         this.sent = true
       }
       this.sending = false
@@ -196,7 +212,7 @@ export default {
   },
   watch: {
     address(address) {
-      this.$store.dispatch('account/LOAD_BALANCE')
+      this.$store.dispatch('account/LOAD_BALANCE', { address })
       // load some cells in advance
       reloadCells(address)
     },

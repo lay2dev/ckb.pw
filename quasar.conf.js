@@ -43,7 +43,7 @@ module.exports = function(ctx) {
       directives: ['TouchHold'],
 
       // Quasar plugins
-      plugins: ['Notify']
+      plugins: ['Notify', 'LocalStorage']
     },
 
     // https://quasar.dev/quasar-cli/cli-documentation/supporting-ie
@@ -52,7 +52,7 @@ module.exports = function(ctx) {
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
       scopeHoisting: true,
-      vueRouterMode: 'history', // available values: 'hash', 'history'
+      vueRouterMode: 'hash', // available values: 'hash', 'history'
       showProgress: true,
       gzip: false,
       analyze: false,

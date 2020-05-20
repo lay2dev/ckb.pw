@@ -16,6 +16,7 @@
     "@quasar/extras": "^1.5.0",
     "abcwallet": "^1.0.2",
     "axios": "^0.18.1",
+    "ckb-js-toolkit": "^0.9.1",
     "ethereum-ens": "^0.8.0",
     "ethereumjs-util": "^6.2.0",
     "moment": "^2.24.0",
@@ -25,7 +26,7 @@
     "vue-i18n": "^8.0.0",
     "vue-qr": "^2.2.1",
     "vuelidate": "^0.7.5",
-    "web3-utils": "^1.2.4"
+    "web3-utils": "^1.2.6"
   },
   "devDependencies": {
     "@quasar/app": "^1.6.0",
