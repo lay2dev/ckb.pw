@@ -8,6 +8,34 @@ export const DecimalMap = {
   6: 'mwei',
   18: 'ether'
 }
+/*
+const minABI = [
+  // transfer
+  {
+    constant: false,
+    inputs: [
+      {
+        name: '_to',
+        type: 'address'
+      },
+      {
+        name: '_value',
+        type: 'uint256'
+      }
+    ],
+    name: 'transfer',
+    outputs: [
+      {
+        name: 'success',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
+]
+*/
 
 export const initETHProvider = async onAddressChanged => {
   if (typeof window.ethereum !== 'undefined') {
@@ -117,14 +145,13 @@ const getSignerByProvider = provider => {
   return DefaultSinger
 }
 
-const ImTokenSigner = MetaMaskSigner
-// const ImTokenSigner = (from, message) =>
-//   new Promise((resolve, reject) => {
-//     window.web3.eth.sign(from, message, (err, result) => {
-//       err && reject(err)
-//       resolve(result)
-//     })
-//   })
+const ImTokenSigner = (from, message) =>
+  new Promise((resolve, reject) => {
+    window.web3.eth.sign(from, message, (err, result) => {
+      err && reject(err)
+      resolve(result)
+    })
+  })
 
 const MetaMaskSigner = async (from, message, typedDataParams) => {
   return await TypedDataSigner(from, message, typedDataParams)
