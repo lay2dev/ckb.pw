@@ -117,10 +117,6 @@ const getSignerByProvider = provider => {
   return DefaultSinger
 }
 
-const MetaMaskSigner = async (from, message, typedDataParams) => {
-  return await TypedDataSigner(from, message, typedDataParams)
-}
-
 const ImTokenSigner = MetaMaskSigner
 // const ImTokenSigner = (from, message) =>
 //   new Promise((resolve, reject) => {
@@ -129,6 +125,10 @@ const ImTokenSigner = MetaMaskSigner
 //       resolve(result)
 //     })
 //   })
+
+const MetaMaskSigner = async (from, message, typedDataParams) => {
+  return await TypedDataSigner(from, message, typedDataParams)
+}
 
 const DefaultSinger = (from, message) =>
   new Promise((resolve, reject) => {
