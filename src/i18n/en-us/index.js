@@ -69,6 +69,7 @@ export default {
   msg_copy_success: 'Copied to Clipboard!',
   msg_no_more_cells:
     'No more live cells, please try again after the last transaction is confirmed.',
+  msg_fee_title: 'Fee Rate Notice',
   msg_fee_details:
     'Fee rate is 0.5%, and we will perform exchanging on Huobi for you. The amount received may be less than expected if there is severe exchange rate fluctuations, please understand.'
 }

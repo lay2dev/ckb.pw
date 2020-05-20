@@ -32,7 +32,7 @@ const LIMIT = 5
 export default {
   name: 'TxCard',
   components: { TxItem },
-  data(){
+  data() {
     return {
       LIMIT: LIMIT
     }

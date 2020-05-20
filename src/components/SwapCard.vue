@@ -64,32 +64,15 @@ The swap process is as follows:
               behavior="menu"
             />
           </div>
+          <div class="row justify-center items-center q-mt-sm">
+            <div class="text-caption q-mr-xs">CKB / {{right.symbol}} = {{ new Number(1 / right.rate).toFixed(right.symbol==='ETH' ? 8 : 6) }}</div>
+            <q-btn color="secondary" size="xs" flat dense icon="las la-exclamation-circle" @click="$q.dialog({title:$t('msg_fee_title'),message:$t('msg_fee_details')})" />
+          </div>
         </div>
-        <div class="row items-center q-gutter-xs"></div>
       </div>
     </q-card-section>
     <q-separator />
-
-    <q-slide-transition>
-      <div v-show="showFeeDetails">
-        <q-card-section class="text-subitle2">
-          {{ $t('msg_fee_details') }}
-        </q-card-section>
-        <q-separator />
-      </div>
-    </q-slide-transition>
-    <q-card-actions class="q-pa-xs" align="between">
-      <q-btn
-        class="col"
-        flat
-        dense
-        :label="$t('btn_fee_details')"
-        :icon-right="
-          showFeeDetails ? 'keyboard_arrow_up' : 'keyboard_arrow_down'
-        "
-        @click="showFeeDetails = !showFeeDetails"
-      />
-      <q-separator inset vertical />
+    <q-card-actions class="q-pa-xs" align="center">
       <q-btn
         class="col-7"
         flat
@@ -171,10 +154,7 @@ export default {
       for (let i = 0; i < tokenList.length; i++) {
         try {
           const hexBalance = await getBalance(address, tokenList[i].address)
-          const balance = web3Utils.fromWei(
-            hexBalance,
-            DecimalMap[tokenList[i].decimal]
-          )
+          const balance = new Number(web3Utils.fromWei(hexBalance, DecimalMap[tokenList[i].decimal])).toFixed(6)
           console.log('balance', balance)
           this.tokenList[i] = { ...tokenList[i], balance }
         } catch (e) {

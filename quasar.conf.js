@@ -43,7 +43,7 @@ module.exports = function(ctx) {
       directives: ['TouchHold'],
 
       // Quasar plugins
-      plugins: ['Notify', 'LocalStorage']
+      plugins: ['Notify', 'LocalStorage', 'Dialog']
     },
 
     // https://quasar.dev/quasar-cli/cli-documentation/supporting-ie

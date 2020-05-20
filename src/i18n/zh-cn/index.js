@@ -67,6 +67,7 @@ export default {
   msg_confirm_delete: '确认删除 ?',
   msg_copy_success: '已复制 !',
   msg_no_more_cells: '暂时没有可用的 Cell，请在上一笔交易确认后重新发送',
+  msg_fee_title: '费率说明',
   msg_fee_details:
     '费率为 0.5%，兑换方式为火币代下单。如果遇到较大汇率波动，到账金额可能少于预期，还望理解。'
 }
