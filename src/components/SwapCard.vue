@@ -99,7 +99,7 @@ export default {
       address: 'addressGetter'
     }),
     price() {
-      return this.ckbAmount / this.right?.rate
+      return (this.ckbAmount / this.right?.rate).toFixed(6)
     }
   },
   async created() {

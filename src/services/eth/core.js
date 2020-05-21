@@ -85,9 +85,10 @@ export const sendAssets = async (
 ) => {
   let params = [{ from: fromAddress, to: toAddress, chain }]
   let method = 'eth_sendTransaction'
+  console.log('[sendAssets] - amount', amount)
   if (tokenAddress?.length) {
     let contract = await window.web3.eth.contract(USDT_ABI).at(tokenAddress)
-    amount = numberToHex(toWei(amount.toFixed(6), DecimalMap[decimal]))
+    amount = numberToHex(toWei(amount, DecimalMap[decimal]))
     params[0].to = tokenAddress
     params[0].data = contract.transfer.getData(toAddress, amount, {
       from: fromAddress
