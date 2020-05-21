@@ -21,10 +21,10 @@ export default {
   btn_copy: 'Copy',
   btn_settings: 'Settings',
   btn_view_more: 'View More',
-  btn_fee_details: 'Fee Details',
+  btn_swap: 'Swap',
+  btn_swap_records: 'Records',
 
   label_for: 'For',
-  label_one_key_swap: 'One Key Swap',
   label_address: 'Address',
   label_amount: 'Amount',
   label_balance: 'Balance',
@@ -52,6 +52,8 @@ export default {
   label_swap: 'Swap',
   label_no_record: 'No Record',
   label_withdrawing: 'Withdrawing',
+  label_rate: 'Rate',
+  label_price: 'Price',
 
   hint_address: 'ETH and CKB addresses are supported',
   hint_amount: 'Min transfer amount is ',

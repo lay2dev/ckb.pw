@@ -72,12 +72,20 @@ The swap process is as follows:
       </div>
     </q-card-section>
     <q-separator />
-    <q-card-actions class="q-pa-xs" align="center">
+    <q-card-actions class="q-pa-xs" align="evenly">
       <q-btn
-        class="col-7"
+        class="col"
         flat
         dense
-        :label="$t('label_one_key_swap')"
+        :label="$t('btn_swap_records')"
+        to="swaps"
+      />
+      <q-separator vertical inset />
+      <q-btn
+        class="col"
+        flat
+        dense
+        :label="$t('btn_swap')"
         @click="swap"
       />
     </q-card-actions>

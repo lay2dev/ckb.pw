@@ -21,10 +21,10 @@ export default {
   btn_copy: '复制',
   btn_settings: '设置',
   btn_view_more: '查看更多',
-  btn_fee_details: '费率说明',
+  btn_swap: '一键兑换',
+  btn_swap_records: '兑换记录',
 
   label_for: '换',
-  label_one_key_swap: '一键兑换',
   label_address: '地址',
   label_amount: '金额',
   label_balance: '余额',
@@ -51,6 +51,8 @@ export default {
   label_dapps: 'Dapps',
   label_no_record: '没有记录',
   label_withdrawing: '收款中',
+  label_rate: '汇率',
+  label_price: '价格',
 
   hint_address: '支持 ETH 和 CKB 地址',
   hint_amount: '最小转账金额为',

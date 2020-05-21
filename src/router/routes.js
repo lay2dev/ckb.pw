@@ -25,8 +25,12 @@ const routes = [
         component: () => import('pages/Dao.vue')
       },
       {
-        path: '/txs',
+        path: 'txs',
         component: () => import('pages/TxRecords.vue')
+      },
+      {
+        path: 'swaps',
+        component: () => import('pages/SwapRecords.vue')
       }
     ]
   }
