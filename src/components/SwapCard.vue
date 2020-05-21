@@ -13,56 +13,40 @@ The swap process is as follows:
         <div class="col column">
           <div class="row justify-between items-center q-gutter-xs">
             <q-skeleton class="col" v-show="loading" type="QBtn" />
-            <q-select
+            <q-btn-dropdown
+              outline
               v-show="!loading"
-              v-model="right"
-              :options="tokenList"
-              :display-value="right ? right.symbol : '-'"
-              dense
-              options-dense
-              filled
-              behavior="menu"
-            >
-              <template v-slot:prepend>
-                <q-avatar>
-                  <img :src="getIcon(right)" />
-                </q-avatar>
-                <div class="q-ml-xs price-text">
-                  {{ displayPrice() }}
-                </div>
-              </template>
-              <template v-slot:option="scope">
-                <q-item
-                  class="q-pa-sm"
-                  v-bind="scope.itemProps"
-                  v-on="scope.itemEvents"
-                >
+              :label="displayPrice() + ' ' + (right ? right.symbol : '-')"
+              >
+              <q-list>
+                <q-item class="q-pa-sm" clickable v-close-popup v-for="token in tokenList" :key="token.symbol" @click="right=token">
                   <q-item-section avatar>
-                    <q-img :src="getIcon(scope.opt)" />
+                    <q-img :src="getIcon(token)" />
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label v-html="scope.opt.symbol" />
+                    <q-item-label v-html="token.symbol" />
                     <q-item-label caption>
-                      {{ $t('label_balance') + ': ' + scope.opt.balance }}
+                      {{ $t('label_balance') + ': ' + token.balance }}
                     </q-item-label>
                   </q-item-section>
                 </q-item>
-                <q-separator />
-              </template>
-            </q-select>
+              </q-list>
+            </q-btn-dropdown>
             <q-icon name="las la-exchange-alt" />
             <q-skeleton class="col" v-show="loading" type="QBtn" />
-            <q-select
+            <q-btn-dropdown
+              outline
               v-show="!loading"
-              v-model="ckbAmount"
-              :options="config.swapCKBAmountList"
-              :display-value="ckbAmount + ' CKB'"
-              dense
-              options-cover
-              options-dense
-              filled
-              behavior="menu"
-            />
+              :label="ckbAmount + ' CKB'"
+              >
+              <q-list>
+                <q-item class="q-pa-sm" clickable v-close-popup v-for="amount in config.swapCKBAmountList" :key="amount" @click="ckbAmount=amount">
+                  <q-item-section avatar>
+                    {{ amount }}
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
           </div>
           <div class="row justify-center items-center q-mt-sm">
             <div class="text-caption q-mr-xs">CKB / {{right.symbol}} = {{ new Number(1 / right.rate).toFixed(right.symbol==='ETH' ? 8 : 6) }}</div>
