@@ -47,7 +47,10 @@ export default {
       let pending = this.$q.localStorage.getItem('pending') || []
       let stillPending = []
       for (let p of pending) {
-        if (this.remoteTXs.find(rtx => rtx.hash === p.hash)) {
+        if (
+          new Date().getTime() - p.time > 3600 * 1000 ||
+          this.remoteTXs.find(rtx => rtx.hash === p.hash)
+        ) {
           continue
         }
         stillPending.push(p)
