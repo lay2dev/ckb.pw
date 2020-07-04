@@ -53,6 +53,7 @@ export default {
         ) {
           continue
         }
+        console.log('[TxCard] pending: ', p)
         stillPending.push(p)
       }
       this.$q.localStorage.set('pending', stillPending)
